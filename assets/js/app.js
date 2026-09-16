@@ -161,23 +161,6 @@ window.appState = {
             });
             if(currentVal) vehPlateSelect.value = currentVal;
         }
-
-        const approveUserSelect = document.getElementById('approve-user');
-        const rejectUserSelect = document.getElementById('reject-user');
-        const lastAdmin = localStorage.getItem('sis_last_admin');
-
-        [approveUserSelect, rejectUserSelect].forEach(sel => {
-            if(sel) {
-                const cur = sel.value || lastAdmin;
-                sel.innerHTML = '<option value="" disabled selected>เลือกรายชื่อผู้ดำเนินการ</option>';
-                userDB.forEach((u, i) => {
-                    const name = u['Name'] || u['ชื่อ'] || 'Unknown';
-                    const nick = u['Nickname'] || u['ชื่อเล่น'] || '';
-                    sel.insertAdjacentHTML('beforeend', `<option value="${i}">${name} ${nick ? `(${nick})` : ''}</option>`);
-                });
-                if(cur !== null && cur !== undefined && cur !== "") sel.value = cur;
-            }
-        });
     },
 
     shiftTimeline: function(days) {
@@ -233,11 +216,7 @@ window.appState = {
             
             if (statusKey === 'pending') {
                 statusHtml = `<span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">รออนุมัติ</span>`;
-                actionHtml = `
-                    <div class="flex gap-1 justify-center">
-                        <button onclick="openApproveModal(${rowIndex})" class="px-2.5 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded text-xs font-medium hover:bg-emerald-600 hover:text-white transition flex items-center gap-1 shadow-sm" title="อนุมัติ"><i class="fa-solid fa-check"></i> อนุมัติ</button>
-                        <button onclick="openRejectModal(${rowIndex})" class="px-2.5 py-1 bg-red-50 text-red-600 border border-red-200 rounded text-xs font-medium hover:bg-red-600 hover:text-white transition flex items-center gap-1 shadow-sm" title="ปฏิเสธ"><i class="fa-solid fa-xmark"></i> ปฏิเสธ</button>
-                    </div>`;
+                actionHtml = `<span class="text-xs text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 inline-flex items-center gap-1.5 whitespace-nowrap"><i class="fa-brands fa-telegram text-sky-500"></i> รออนุมัติใน Telegram</span>`;
             } else if (statusKey === 'approved') {
                 statusHtml = `
                     <div class="flex flex-col gap-1 items-start">
@@ -420,90 +399,7 @@ window.switchTab = function(tabId) {
     }
 }
 
-// --- Actions (Approve / Reject) ---
-const approveModal = document.getElementById('approve-modal');
-const approveForm = document.getElementById('modal-approve-form');
 
-window.openApproveModal = function(rowIndex) {
-    document.getElementById('approve-row-index').value = rowIndex;
-    const lastAdmin = localStorage.getItem('sis_last_admin');
-    const approveUserSelect = document.getElementById('approve-user');
-    if (approveUserSelect && lastAdmin !== null && lastAdmin !== undefined && lastAdmin !== "") {
-        approveUserSelect.value = lastAdmin;
-    }
-    document.getElementById('approve-remark').value = '';
-    approveModal.classList.remove('hidden');
-};
-
-window.closeApproveModal = function() {
-    approveModal.classList.add('hidden');
-    if(approveForm) approveForm.reset();
-};
-
-if(approveForm) {
-    approveForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const rIndex = document.getElementById('approve-row-index').value;
-        const uIdx = document.getElementById('approve-user').value;
-        if(uIdx === "") {
-            alert("กรุณาเลือกรายชื่อผู้อนุมัติ");
-            return;
-        }
-        localStorage.setItem('sis_last_admin', uIdx);
-        const u = userDB[uIdx] || {};
-        const name = u['Name'] || u['ชื่อ'] || 'ผู้ดูแลระบบ';
-        const nick = u['Nickname'] || u['ชื่อเล่น'] || '';
-        const actorName = `${name}${nick ? ` (${nick})` : ''}`;
-        
-        const extra = document.getElementById('approve-remark').value.trim();
-        const fullRemark = `Approved โดย ${actorName}${extra ? ` - ${extra}` : ''}`;
-        
-        submitStatusUpdate(rIndex, "Approved", fullRemark, actorName);
-        closeApproveModal();
-    });
-}
-
-const rejectModal = document.getElementById('reject-modal');
-const rejectForm = document.getElementById('modal-reject-form');
-
-window.openRejectModal = function(rowIndex) {
-    document.getElementById('reject-row-index').value = rowIndex;
-    const lastAdmin = localStorage.getItem('sis_last_admin');
-    const rejectUserSelect = document.getElementById('reject-user');
-    if (rejectUserSelect && lastAdmin !== null && lastAdmin !== undefined && lastAdmin !== "") {
-        rejectUserSelect.value = lastAdmin;
-    }
-    document.getElementById('reject-reason').value = '';
-    rejectModal.classList.remove('hidden');
-};
-
-window.closeRejectModal = function() {
-    rejectModal.classList.add('hidden');
-    if(rejectForm) rejectForm.reset();
-};
-
-if(rejectForm) {
-    rejectForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const rIndex = document.getElementById('reject-row-index').value;
-        const uIdx = document.getElementById('reject-user').value;
-        if(uIdx === "") {
-            alert("กรุณาเลือกรายชื่อผู้ดำเนินการ");
-            return;
-        }
-        localStorage.setItem('sis_last_admin', uIdx);
-        const u = userDB[uIdx] || {};
-        const name = u['Name'] || u['ชื่อ'] || 'ผู้ดูแลระบบ';
-        const nick = u['Nickname'] || u['ชื่อเล่น'] || '';
-        const actorName = `${name}${nick ? ` (${nick})` : ''}`;
-
-        const reason = document.getElementById('reject-reason').value.trim();
-        const fullRemark = `Rejected โดย ${actorName} - เหตุผล: ${reason}`;
-        
-        submitStatusUpdate(rIndex, "Rejected", fullRemark, actorName);
-        closeRejectModal();
-    });
-}
 
 function submitStatusUpdate(rowIndex, newStatus, fullRemark, actorName) {
     const booking = appState.bookings.find(b => b._rowIndex === parseInt(rowIndex));

@@ -25,3 +25,4 @@
 - Published live via GitHub Pages branch `gh-pages` at `https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/` (2026-09-16 15:30).
 - Implemented Instant Local Caching (LocalStorage + Master Data Fallback) with background SWR sync to resolve slow dropdown loading caused by Google Apps Script cold starts (2026-09-16 15:39).
 - Added Approver/Rejector identity tracking modal and formatted remark output to Column N (`หมายเหตุ`) (2026-09-16 15:55).
+- Dedicated approval workflow to Telegram Bot only; removed manual approval triggers from Web App to prevent authorization bypass (2026-09-16 16:31).
