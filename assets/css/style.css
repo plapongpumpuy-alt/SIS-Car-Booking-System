@@ -1,0 +1,31 @@
+/* style.css */
+
+/* Custom calendar icon color/opacity in datetime-local */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+    transition: 0.2s;
+}
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* Custom radio card selection style */
+.vehicle-type-card.selected {
+    border-color: #0ea5e9; /* brand-500 */
+    background-color: #f0f9ff; /* brand-50 */
+}
+.vehicle-type-card.selected i {
+    color: #0ea5e9;
+}
+
+/* Smooth modal transitions */
+#submit-modal:not(.hidden) {
+    display: flex;
+}
+#submit-modal.show {
+    opacity: 1;
+}
+#submit-modal.show > div {
+    transform: scale(1);
+}

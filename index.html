@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIS Car Booking System - Phase 3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] },
+                    colors: { brand: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e' } }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; }
+        .tab-btn.active { color: #0284c7; border-bottom: 2px solid #0284c7; background-color: #f0f9ff; font-weight: 600; }
+        .tab-btn:not(.active) { color: #64748b; font-weight: 500; }
+        .timeline-grid { display: grid; grid-template-columns: 140px repeat(7, minmax(100px, 1fr)); gap: 1px; background-color: #e2e8f0; border: 1px solid #e2e8f0; }
+        .timeline-cell { background-color: white; padding: 0.5rem; min-height: 60px; position: relative; }
+        .timeline-header { background-color: #f8fafc; font-weight: 600; text-align: center; padding: 0.5rem; font-size: 0.875rem; color: #475569; }
+        .timeline-bar { position: absolute; top: 10px; height: 40px; border-radius: 4px; padding: 0.25rem 0.5rem; font-size: 0.75rem; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 10; font-weight: 500; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .status-pending { background-color: #f59e0b; }
+        .status-approved { background-color: #10b981; }
+        .status-completed { background-color: #64748b; }
+        .status-rejected { background-color: #ef4444; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-slate-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center text-white shadow-md">
+                        <i class="fa-solid fa-car-side text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900 leading-tight">SIS Car Booking</h1>
+                        <p class="text-xs text-brand-600 font-medium tracking-wide">Phase 3: Admin Workspace</p>
+                    </div>
+                </div>
+                <div class="text-right hidden sm:block">
+                    <p class="text-sm font-medium text-gray-500" id="current-datetime">กำลังโหลดเวลา...</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+        
+        <!-- SPA Tab Navigation -->
+        <div class="flex border-b border-gray-200 mb-6 bg-white rounded-xl overflow-hidden shadow-sm flex-col sm:flex-row text-sm sm:text-base">
+            <button id="tab-form" class="tab-btn active flex-1 py-3 sm:py-4 text-center transition flex items-center justify-center gap-2 hover:bg-brand-50" onclick="switchTab('form')">
+                <i class="fa-regular fa-calendar-plus"></i> แบบฟอร์มการจอง
+            </button>
+            <button id="tab-dash" class="tab-btn flex-1 py-3 sm:py-4 text-center transition flex items-center justify-center gap-2 hover:bg-gray-50" onclick="switchTab('dash')">
+                <i class="fa-solid fa-list-check"></i> แดชบอร์ดจัดการ
+            </button>
+            <button id="tab-time" class="tab-btn flex-1 py-3 sm:py-4 text-center transition flex items-center justify-center gap-2 hover:bg-gray-50" onclick="switchTab('time')">
+                <i class="fa-solid fa-timeline"></i> ปฏิทินการใช้รถ
+            </button>
+        </div>
+
+        <!-- ==================== VIEW: FORM ==================== -->
+        <div id="view-form" class="block animate-fade-in grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-8">
+                <form id="booking-form" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-8">
+                    
+                    <div class="border-b border-gray-100 pb-4">
+                        <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <i class="fa-regular fa-envelope text-brand-600"></i> ข้อมูลผู้จอง
+                        </h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อผู้จอง <span class="text-red-500">*</span></label>
+                            <select id="req-user" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition bg-white mt-1">
+                                <option value="" disabled selected>โหลดรายชื่อพนักงาน...</option>
+                            </select>
+                            <div id="user-info-card" class="mt-3 p-3 bg-brand-50 border border-brand-100 rounded-lg hidden">
+                                <p class="text-sm text-brand-800"><span class="font-semibold">อีเมล:</span> <span id="info-email"></span></p>
+                                <p class="text-sm text-brand-800"><span class="font-semibold">เบอร์โทร:</span> <span id="info-tel"></span></p>
+                                <p class="text-sm text-brand-800"><span class="font-semibold">ตำแหน่ง:</span> <span id="info-position"></span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-b border-gray-100 pb-4 pt-4">
+                        <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <i class="fa-solid fa-map-location-dot text-brand-600"></i> รายละเอียดการเดินทาง
+                        </h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">จากวันที่ <span class="text-red-500">*</span></label>
+                            <input type="date" id="dt-start" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">ถึงวันที่ <span class="text-red-500">*</span></label>
+                            <input type="date" id="dt-end" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            <p id="dt-error" class="text-red-500 text-xs mt-1 hidden font-medium">วันที่สิ้นสุด ต้องมากกว่าหรือเท่ากับวันที่เริ่มต้น</p>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนกี่วัน</label>
+                            <input type="text" id="dt-days" readonly class="w-full px-4 py-2 border border-gray-200 bg-gray-50 rounded-lg text-gray-600 outline-none" placeholder="คำนวณอัตโนมัติ">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">ไปทำอะไร <span class="text-red-500">*</span></label>
+                            <input type="text" id="purpose" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition" placeholder="เช่น Program, พบลูกค้า, ส่งของ">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">ไปที่ไหน <span class="text-red-500">*</span></label>
+                            <input type="text" id="dest" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition" placeholder="ระบุสถานที่ หรือบริษัทปลายทาง">
+                        </div>
+                    </div>
+
+                    <div class="border-b border-gray-100 pb-4 pt-4">
+                        <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <i class="fa-solid fa-car text-brand-600"></i> ข้อมูลยานพาหนะ
+                        </h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">ทะเบียนรถที่จอง <span class="text-red-500">*</span></label>
+                            <select id="veh-plate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition bg-white mt-1">
+                                <option value="" disabled selected>โหลดข้อมูลรถ...</option>
+                            </select>
+                            <div id="car-info-card" class="mt-3 p-3 bg-brand-50 border border-brand-100 rounded-lg hidden">
+                                <p class="text-sm text-brand-800"><span class="font-semibold">รุ่น:</span> <span id="info-model"></span></p>
+                                <p class="text-sm text-brand-800"><span class="font-semibold">ผู้ดูแล:</span> <span id="info-manager"></span></p>
+                            </div>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">เลขไมล์ก่อนออกเดินทาง (ถ้าทราบ)</label>
+                            <input type="number" id="mileage-out" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition" placeholder="เช่น 98587">
+                            <p class="text-xs text-gray-500 mt-1">สามารถเว้นว่างไว้ และมากรอกทีหลังตอนกด "บันทึกคืนรถ" ได้</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-6 border-t border-gray-100">
+                        <button type="button" id="btn-reset" class="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
+                            ล้างข้อมูล
+                        </button>
+                        <button type="submit" id="btn-submit" class="px-6 py-2.5 bg-brand-600 text-white font-medium rounded-lg hover:bg-brand-700 transition shadow-sm">
+                            บันทึกและส่งคำขอ
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="lg:col-span-4">
+                <div class="bg-slate-800 rounded-xl shadow-sm text-white sticky top-24 overflow-hidden">
+                    <div class="p-4 border-b border-slate-700 bg-slate-900 flex justify-between items-center">
+                        <h3 class="font-semibold flex items-center gap-2">
+                            <i class="fa-solid fa-file-invoice text-brand-400"></i> สรุปการจอง (Preview)
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <div><p class="text-slate-400 text-xs mb-1">ผู้จอง</p><p id="pv-user" class="font-medium text-sm">-</p><p id="pv-email" class="text-xs text-slate-300">-</p></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><p class="text-slate-400 text-xs mb-1">จากวันที่</p><p id="pv-start" class="font-medium text-sm">-</p></div>
+                            <div><p class="text-slate-400 text-xs mb-1">ถึงวันที่</p><p id="pv-end" class="font-medium text-sm">-</p></div>
+                        </div>
+                        <div><p class="text-slate-400 text-xs mb-1">จำนวนวัน</p><p id="pv-days" class="font-medium text-sm">-</p></div>
+                        <div><p class="text-slate-400 text-xs mb-1">ไปทำอะไร & ไปที่ไหน</p><p id="pv-purpose" class="font-medium text-sm">-</p><p id="pv-dest" class="text-xs text-slate-300">-</p></div>
+                        <div class="bg-slate-900 p-4 rounded-lg border border-slate-700 mt-2">
+                            <p class="text-slate-400 text-xs mb-2">ยานพาหนะที่เลือก</p>
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-slate-300"><i class="fa-solid fa-car"></i></div>
+                                <div><p id="pv-plate" class="font-bold text-sm text-brand-400">-</p><p id="pv-model" class="text-xs text-slate-400">-</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== VIEW: DASHBOARD ==================== -->
+        <div id="view-dash" class="hidden animate-fade-in">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-6 border-b border-gray-100 flex flex-col lg:flex-row justify-between items-center bg-gray-50 gap-4">
+                    <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2 whitespace-nowrap">
+                        <i class="fa-solid fa-list-check text-brand-600"></i> แดชบอร์ดจัดการคำขอ
+                    </h2>
+                    <div class="flex flex-col sm:flex-row w-full lg:w-auto items-center gap-3">
+                        <select id="filter-status" class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500 bg-white">
+                            <option value="all">สถานะทั้งหมด</option>
+                            <option value="pending">รออนุมัติ / รอใช้งาน</option>
+                            <option value="approved">อนุมัติแล้ว</option>
+                            <option value="rejected">ปฏิเสธ</option>
+                            <option value="completed">คืนรถแล้ว</option>
+                        </select>
+                        <div class="relative w-full sm:w-64">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                            </span>
+                            <input type="text" id="dash-search" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500" placeholder="ค้นหาชื่อ, ทะเบียน...">
+                        </div>
+                        <button onclick="appState.fetchBookings()" class="text-sm px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition shadow-sm flex items-center gap-2 font-medium whitespace-nowrap">
+                            <i class="fa-solid fa-rotate-right"></i> รีเฟรช
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[1000px]">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 text-sm">
+                                <th class="p-4 font-semibold">ผู้จอง</th>
+                                <th class="p-4 font-semibold">ทะเบียนรถ</th>
+                                <th class="p-4 font-semibold">วันที่เดินทาง</th>
+                                <th class="p-4 font-semibold">จุดประสงค์/สถานที่</th>
+                                <th class="p-4 font-semibold">เวลาที่จอง</th>
+                                <th class="p-4 font-semibold">สถานะ</th>
+                                <th class="p-4 font-semibold text-center w-56">จัดการ (แอดมิน)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dash-tbody" class="divide-y divide-gray-100 text-sm">
+                            <tr>
+                                <td colspan="7" class="p-8 text-center text-gray-500">
+                                    <i class="fa-solid fa-spinner fa-spin text-3xl mb-3 text-brand-500 block"></i>
+                                    <p>กำลังโหลดข้อมูล...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== VIEW: TIMELINE ==================== -->
+        <div id="view-time" class="hidden animate-fade-in">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                    <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <i class="fa-solid fa-timeline text-brand-600"></i> ปฏิทินตารางการใช้รถ (7 วัน)
+                    </h2>
+                    <div class="flex items-center gap-2 bg-gray-50 p-1 rounded-lg border border-gray-200">
+                        <button onclick="appState.shiftTimeline(-7)" class="px-3 py-1.5 bg-white border border-gray-200 shadow-sm rounded hover:bg-gray-50 text-sm font-medium transition"><i class="fa-solid fa-chevron-left mr-1"></i> ย้อนกลับ</button>
+                        <span id="timeline-range-label" class="text-sm font-semibold text-gray-700 px-4 min-w-[140px] text-center">...</span>
+                        <button onclick="appState.shiftTimeline(7)" class="px-3 py-1.5 bg-white border border-gray-200 shadow-sm rounded hover:bg-gray-50 text-sm font-medium transition">ถัดไป <i class="fa-solid fa-chevron-right ml-1"></i></button>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto pb-4">
+                    <div id="timeline-container" class="timeline-grid rounded-lg overflow-hidden min-w-[800px]">
+                        <!-- Rendered via JS -->
+                    </div>
+                </div>
+                
+                <div class="mt-4 flex gap-4 text-xs text-gray-600 justify-end font-medium">
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full status-pending"></span> รออนุมัติ/รอใช้งาน</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full status-approved"></span> อนุมัติแล้ว</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full status-completed"></span> คืนรถแล้ว</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modals -->
+    <!-- Submit Confirm Modal -->
+    <div id="submit-modal" class="fixed inset-0 bg-slate-900 bg-opacity-50 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full mx-4 overflow-hidden">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-paper-plane"></i></div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">ยืนยันการส่งคำขอ</h3>
+                <p class="text-sm text-gray-500 mb-6">กรุณาตรวจสอบข้อมูลให้ถูกต้องก่อนกดยืนยัน</p>
+                <div class="flex gap-3">
+                    <button id="modal-cancel" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg transition">ยกเลิก</button>
+                    <button id="modal-confirm" class="flex-1 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg transition shadow-sm">ยืนยันส่งคำขอ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Reason Modal -->
+    <div id="reject-modal" class="fixed inset-0 bg-slate-900 bg-opacity-50 z-[100] hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full mx-4">
+            <form id="modal-reject-form" class="p-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-2 text-red-600"><i class="fa-solid fa-ban"></i> ปฏิเสธคำขอ</h3>
+                <p class="text-sm text-gray-500 mb-4">ระบุเหตุผลการปฏิเสธคำขอ เพื่อให้ผู้จองรับทราบ</p>
+                <input type="hidden" id="reject-row-index">
+                <textarea id="reject-reason" required rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-red-500 mb-4 text-sm" placeholder="เช่น รถไม่ว่าง, ซ่อมบำรุง..."></textarea>
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeRejectModal()" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg transition text-sm">ยกเลิก</button>
+                    <button type="submit" id="reject-submit-btn" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition shadow-sm text-sm">ยืนยันปฏิเสธ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Return Car Modal -->
+    <div id="return-modal" class="fixed inset-0 bg-slate-900 bg-opacity-50 z-[100] hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+            <form id="modal-return-form" class="p-6">
+                <div class="border-b border-gray-100 pb-4 mb-4 flex justify-between items-start">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2"><i class="fa-solid fa-gauge-high text-brand-600"></i> บันทึกข้อมูลหลังใช้รถ</h2>
+                        <p class="text-sm text-gray-500 mt-1">ทะเบียนรถ: <span id="modal-plate-display" class="font-bold text-brand-600"></span></p>
+                        <input type="hidden" id="modal-plate-value">
+                        <input type="hidden" id="modal-return-row">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">เลขไมล์ออก <span class="text-red-500">*</span></label>
+                        <input type="number" id="modal-mileage-out" required class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">เลขไมล์เข้า <span class="text-red-500">*</span></label>
+                        <input type="number" id="modal-mileage-in" required class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">ค่าทางด่วน</label><input type="number" id="modal-toll-fee" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500" placeholder="ถ้ามี"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">ทางด่วนคงเหลือ</label><input type="number" id="modal-toll-balance" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500" placeholder="ถ้ามี"></div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeReturnModal()" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-lg transition">ยกเลิก</button>
+                    <button type="submit" id="return-submit-btn" class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition shadow-sm"><i class="fa-solid fa-floppy-disk mr-1"></i> อัปเดตข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/app.js"></script>
+</body>
+</html>
