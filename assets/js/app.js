@@ -1,53 +1,137 @@
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFDhxfRoLMyLQu7aQjy3eTNGFHvKhgX02Z_BeRaE2RRVZWtNRwTLIXs50JGm1ujAPICA/exec";
 
-// จะถูกเติมข้อมูลอัตโนมัติจาก Google Sheet
+// Master data fallback (โหลดได้ทันที 0ms ไม่ต้องรอ Google Sheets)
+const DEFAULT_USERS = [
+    { "Name": "นาย ประพัฒน์ สกุลรัตนกุลชัย", "Nickname": "พัฒน์", "Tel": "0891150330", "Email": "prapat09@gmail.com", "Position": "Manager" },
+    { "Name": "นาย สมคิด เอี่ยมสำอางค์", "Nickname": "ปุ้ย", "Tel": "0898978454", "Email": "plapongpumpuy@gmail.com", "Position": "Engineer" },
+    { "Name": "นาย อัมมาร์ สมานพิทักษ์", "Nickname": "มาร์", "Tel": "0894631615", "Email": "ammamvsk.new@gmail.com", "Position": "Engineer" },
+    { "Name": "นาย วันจักรี เนียมพุ่มพวง", "Nickname": "ต้น", "Tel": "0982843460", "Email": "wanjakkri.n@gmail.com", "Position": "Engineer" },
+    { "Name": "นาย วิษณุ วงษ์คำ", "Nickname": "นุ", "Tel": "0649371489", "Email": "witsanu.wongkam.1996@gmail.com", "Position": "Technician" },
+    { "Name": "น.ส. วิภาวรรณ จันตา", "Nickname": "ป็อปอาย", "Tel": "0898686964", "Email": "Popeye.wipawan@gmail.com", "Position": "Admin ACC" },
+    { "Name": "น.ส.วีณา แสงสุวรรณ", "Nickname": "วี", "Tel": "0626639899", "Email": "accsisint@gmail.com", "Position": "ACC" },
+    { "Name": "นาย ปัญญา แย้มพุชชง", "Nickname": "ปิ๊ก", "Tel": "0633859821", "Email": "payyayaemphuchchng@gmail.com", "Position": "Technician" },
+    { "Name": "นาย ณิชาบล พงษ์ศักดิ์", "Nickname": "โด่ง", "Tel": "065667950", "Email": "dong065667950@gmail.com", "Position": "Technician" },
+    { "Name": "นาย อัษฎาวุฒิ พลอยโสพล", "Nickname": "เติล", "Tel": "", "Email": "adsadawut028@gmail.com", "Position": "Technician" },
+    { "Name": "นาย ธนเดช อินช่วย", "Nickname": "อั๋น", "Tel": "0944847953", "Email": "Tanadet080@gmail.com", "Position": "Technician" },
+    { "Name": "นาย ดาวกระจาย ศรีชัย", "Nickname": "ปู", "Tel": "0981505495", "Email": "daokrachais@gmail.com", "Position": "Technician" },
+    { "Name": "นาย ประวัตร กองคำ", "Nickname": "โทน", "Tel": "", "Email": "Prawatit88@gmail.com", "Position": "Technician" },
+    { "Name": "นาย กิตติกวิน เรียบร้อย", "Nickname": "ซอฟ", "Tel": "0626253030", "Email": "kittikwinreiybrxy718@gmail.com", "Position": "นักศึกษาฝึกงาน" }
+];
+
+const DEFAULT_CARS = [
+    { "ทะเบียนรถ": "1ฒม3823", "รุ่น": "D-Max", "สี": "เทา", "ยี่ห้อ": "ISUSU", "Code": "SIS003", "ชื่อคนดูแล": "นาย อัมมาร สมานพิทักษ์" },
+    { "ทะเบียนรถ": "5ขจ9318", "รุ่น": "Yaris Cross", "สี": "เทา", "ยี่ห้อ": "Toyota", "Code": "SIS001", "ชื่อคนดูแล": "นาย ประพัฒน์ สกุลรัตนกุลชัย" },
+    { "ทะเบียนรถ": "4ขช7395", "รุ่น": "Civic EHEV", "สี": "ขาว", "ยี่ห้อ": "Honda", "Code": "SIS002", "ชื่อคนดูแล": "นาย สมคิด เอี่ยมสำอางค์" },
+    { "ทะเบียนรถ": "ฮฐ1300", "รุ่น": "Toyota", "สี": "ขาว", "ยี่ห้อ": "Toyota", "Code": "SIS005", "ชื่อคนดูแล": "นาย วิษณุ วงษ์คำ" },
+    { "ทะเบียนรถ": "3ฒจ4298", "รุ่น": "Toyota Revo", "สี": "ขาว", "ยี่ห้อ": "Toyota", "Code": "SIS004", "ชื่อคนดูแล": "นาย วันจักรี เนียมพุ่มพวง" }
+];
+
+// จะถูกเติมข้อมูลจาก LocalStorage หรือ Default ทันที และซิงค์กับ Google Sheet ในพื้นหลัง
 let userDB = [];
 let vehicleDB = [];
 
+function initLocalCache() {
+    try {
+        const cachedUsers = localStorage.getItem('sis_users');
+        const cachedCars = localStorage.getItem('sis_cars');
+        const cachedHistory = localStorage.getItem('sis_history');
+
+        userDB = cachedUsers ? JSON.parse(cachedUsers) : DEFAULT_USERS;
+        vehicleDB = cachedCars ? JSON.parse(cachedCars) : DEFAULT_CARS;
+        if (cachedHistory && window.appState) {
+            window.appState.bookings = JSON.parse(cachedHistory);
+        }
+    } catch(e) {
+        console.warn("Using fallback master data", e);
+        userDB = DEFAULT_USERS;
+        vehicleDB = DEFAULT_CARS;
+    }
+}
+initLocalCache();
+
 // App State
 window.appState = {
-    bookings: [],
+    bookings: (function(){
+        try {
+            const h = localStorage.getItem('sis_history');
+            return h ? JSON.parse(h) : [];
+        } catch(e) { return []; }
+    })(),
     timelineStartDate: new Date(),
     currentPayload: null,
     
-    // ดึงข้อมูลทั้งหมดในครั้งเดียว (ประวัติ, รถ, พนักงาน)
+    setSyncStatus: function(state) {
+        const el = document.getElementById('sync-status');
+        if (!el) return;
+        if (state === 'syncing') {
+            el.className = "text-xs px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1.5 bg-brand-50 text-brand-600 border border-brand-200 transition-all";
+            el.innerHTML = '<i class="fa-solid fa-rotate fa-spin text-xs"></i> กำลังซิงค์ข้อมูล...';
+        } else if (state === 'synced') {
+            el.className = "text-xs px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 transition-all";
+            el.innerHTML = '<i class="fa-solid fa-circle-check text-xs"></i> ข้อมูลล่าสุดแล้ว';
+        } else if (state === 'offline') {
+            el.className = "text-xs px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200 transition-all";
+            el.innerHTML = '<i class="fa-solid fa-cloud text-xs"></i> ใช้งานข้อมูลจากแคช';
+        } else if (state === 'error') {
+            el.className = "text-xs px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1.5 bg-red-50 text-red-700 border border-red-200 transition-all";
+            el.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-xs"></i> ซิงค์ไม่สำเร็จ';
+        }
+    },
+
+    // ดึงข้อมูลทั้งหมดในพื้นหลัง (ประวัติ, รถ, พนักงาน)
     fetchAllData: async function() {
+        this.setSyncStatus('syncing');
         const tbody = document.getElementById('dash-tbody');
-        if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-500"><i class="fa-solid fa-spinner fa-spin text-3xl mb-3 text-brand-500 block"></i><p>กำลังเชื่อมต่อฐานข้อมูล...</p></td></tr>`;
+        if(tbody && (!this.bookings || this.bookings.length === 0)) {
+            tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-500"><i class="fa-solid fa-spinner fa-spin text-3xl mb-3 text-brand-500 block"></i><p>กำลังเชื่อมต่อฐานข้อมูล...</p></td></tr>`;
+        }
         
         try {
             const response = await fetch(GOOGLE_SCRIPT_URL + "?action=get_all");
             const data = await response.json();
             if (data.status === 'success') {
-                this.bookings = data.history || [];
-                userDB = data.users || [];
-                vehicleDB = data.cars || [];
+                if (data.history) {
+                    this.bookings = data.history;
+                    try { localStorage.setItem('sis_history', JSON.stringify(data.history)); } catch(e){}
+                }
+                if (data.users && data.users.length > 0) {
+                    userDB = data.users;
+                    try { localStorage.setItem('sis_users', JSON.stringify(data.users)); } catch(e){}
+                }
+                if (data.cars && data.cars.length > 0) {
+                    vehicleDB = data.cars;
+                    try { localStorage.setItem('sis_cars', JSON.stringify(data.cars)); } catch(e){}
+                }
                 
                 this.populateDropdowns();
                 this.renderDashboard();
                 this.renderTimeline();
+                this.setSyncStatus('synced');
             } else {
-                if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-500">ไม่สามารถโหลดข้อมูลได้: ${data.message}</td></tr>`;
+                this.setSyncStatus('error');
             }
         } catch (error) {
-            console.error('Error fetching data:', error);
-            if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-500"><i class="fa-solid fa-triangle-exclamation text-3xl mb-3 block"></i><p>เกิดข้อผิดพลาดในการเชื่อมต่อ</p></td></tr>`;
+            console.warn('Background sync error, maintaining local cache:', error);
+            this.setSyncStatus('offline');
         }
     },
 
     // ดึงเฉพาะประวัติ (ใช้ตอนกดปุ่มรีเฟรชใน Dashboard)
     fetchBookings: async function() {
-        const tbody = document.getElementById('dash-tbody');
+        this.setSyncStatus('syncing');
         try {
             const response = await fetch(GOOGLE_SCRIPT_URL + "?action=get_history");
             const data = await response.json();
             if (data.status === 'success' && data.data) {
                 this.bookings = data.data;
+                try { localStorage.setItem('sis_history', JSON.stringify(data.data)); } catch(e){}
                 this.renderDashboard();
                 this.renderTimeline();
+                this.setSyncStatus('synced');
             }
         } catch (error) {
-            console.error('Error fetching bookings:', error);
+            console.warn('Error fetching bookings:', error);
+            this.setSyncStatus('offline');
         }
     },
 
@@ -430,7 +514,15 @@ if (returnForm) {
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
-    // โหลดข้อมูลทั้งหมดทันทีที่หน้าเว็บเปิดขึ้นมา
+    // 1. นำข้อมูลพนักงานและรถจากแคช/ค่าเริ่มต้นใส่ Dropdown ทันที 0ms ไม่ต้องรอ API
+    initLocalCache();
+    appState.populateDropdowns();
+    if (appState.bookings && appState.bookings.length > 0) {
+        appState.renderDashboard();
+        appState.renderTimeline();
+    }
+
+    // 2. ซิงค์ข้อมูลล่าสุดกับ Google Sheets ในเบื้องหลัง (Background Sync)
     appState.fetchAllData();
 
     // Clock
