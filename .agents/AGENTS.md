@@ -22,3 +22,4 @@
 - Initial project setup (2026-09-15 16:19).
 - Phase 1 Frontend implementation with Tailwind CSS and Vanilla JS, avoiding ES6 imports to allow testing via local `file://` protocol directly (2026-09-15 16:21).
 - GitHub Pages selected for public hosting (2026-09-16 15:12). MinGit configured, repo initialized, and deployment pipeline prepared.
+- Published live via GitHub Pages branch `gh-pages` at `https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/` (2026-09-16 15:30).

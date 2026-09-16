@@ -1,11 +1,13 @@
 # SIS Car Booking System
-**Version:** v.2026.09.16.1512
-**Last Updated:** 2026-09-16 15:12:00+07:00
+**Version:** v.2026.09.16.1530
+**Last Updated:** 2026-09-16 15:30:00+07:00
+**Live Website (GitHub Pages):** [https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/](https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/)
 
 ## Overview
 Welcome to the SIS Car Booking System. This document serves as the main user manual and work log.
 
 ## Work Log / Changelog
+- **2026-09-16 15:30**: Successfully published and deployed to GitHub Pages at `https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/`.
 - **2026-09-16 15:12**: Initialized Git repository, installed Git environment, and prepared deployment configuration for GitHub Pages.
 - **2026-09-16 10:35**: Added `history.html` and `assets/js/history.js` to view booking history. Updated `index.html` header to include a navigation menu.
 - **2026-09-15 16:41**: (Phase 2 Completed) Connected the frontend form to the live Google Sheets Backend via Google Apps Script API. Replaced mockSubmit with real `fetch()` API call. Added loading spinner on submit.
