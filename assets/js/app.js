@@ -161,6 +161,23 @@ window.appState = {
             });
             if(currentVal) vehPlateSelect.value = currentVal;
         }
+
+        const approveUserSelect = document.getElementById('approve-user');
+        const rejectUserSelect = document.getElementById('reject-user');
+        const lastAdmin = localStorage.getItem('sis_last_admin');
+
+        [approveUserSelect, rejectUserSelect].forEach(sel => {
+            if(sel) {
+                const cur = sel.value || lastAdmin;
+                sel.innerHTML = '<option value="" disabled selected>เลือกรายชื่อผู้ดำเนินการ</option>';
+                userDB.forEach((u, i) => {
+                    const name = u['Name'] || u['ชื่อ'] || 'Unknown';
+                    const nick = u['Nickname'] || u['ชื่อเล่น'] || '';
+                    sel.insertAdjacentHTML('beforeend', `<option value="${i}">${name} ${nick ? `(${nick})` : ''}</option>`);
+                });
+                if(cur !== null && cur !== undefined && cur !== "") sel.value = cur;
+            }
+        });
     },
 
     shiftTimeline: function(days) {
@@ -218,20 +235,28 @@ window.appState = {
                 statusHtml = `<span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">รออนุมัติ</span>`;
                 actionHtml = `
                     <div class="flex gap-1 justify-center">
-                        <button onclick="approveBooking(${rowIndex})" class="px-2 py-1 bg-green-50 text-green-600 border border-green-200 rounded text-xs font-medium hover:bg-green-600 hover:text-white transition" title="อนุมัติ"><i class="fa-solid fa-check"></i> อนุมัติ</button>
-                        <button onclick="openRejectModal(${rowIndex})" class="px-2 py-1 bg-red-50 text-red-600 border border-red-200 rounded text-xs font-medium hover:bg-red-600 hover:text-white transition" title="ปฏิเสธ"><i class="fa-solid fa-xmark"></i> ปฏิเสธ</button>
+                        <button onclick="openApproveModal(${rowIndex})" class="px-2.5 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded text-xs font-medium hover:bg-emerald-600 hover:text-white transition flex items-center gap-1 shadow-sm" title="อนุมัติ"><i class="fa-solid fa-check"></i> อนุมัติ</button>
+                        <button onclick="openRejectModal(${rowIndex})" class="px-2.5 py-1 bg-red-50 text-red-600 border border-red-200 rounded text-xs font-medium hover:bg-red-600 hover:text-white transition flex items-center gap-1 shadow-sm" title="ปฏิเสธ"><i class="fa-solid fa-xmark"></i> ปฏิเสธ</button>
                     </div>`;
             } else if (statusKey === 'approved') {
-                statusHtml = `<span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">อนุมัติแล้ว</span>`;
+                statusHtml = `
+                    <div class="flex flex-col gap-1 items-start">
+                        <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">อนุมัติแล้ว</span>
+                        ${remark && remark !== '-' ? `<span class="text-[11px] text-emerald-800 font-medium max-w-[170px] truncate" title="${remark}"><i class="fa-solid fa-circle-check text-[10px] mr-1 text-emerald-600"></i>${remark}</span>` : ''}
+                    </div>`;
                 actionHtml = `<button onclick="window.openReturnModal('${plate}', '${mileageOut === '-' ? '' : mileageOut}', ${rowIndex})" class="px-3 py-1 bg-brand-50 text-brand-600 border border-brand-200 rounded text-xs font-medium hover:bg-brand-600 hover:text-white transition whitespace-nowrap"><i class="fa-solid fa-pen-to-square"></i> บันทึกคืนรถ</button>`;
             } else if (statusKey === 'rejected') {
                 statusHtml = `
                     <div class="flex flex-col gap-1 items-start">
                         <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">ปฏิเสธแล้ว</span>
-                        ${remark && remark !== '-' ? `<span class="text-[10px] text-red-500 max-w-[120px] truncate" title="${remark}">เหตุผล: ${remark}</span>` : ''}
+                        ${remark && remark !== '-' ? `<span class="text-[11px] text-red-600 font-medium max-w-[170px] truncate" title="${remark}"><i class="fa-solid fa-ban text-[10px] mr-1 text-red-500"></i>${remark}</span>` : ''}
                     </div>`;
             } else {
-                statusHtml = `<span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold">คืนรถแล้ว</span>`;
+                statusHtml = `
+                    <div class="flex flex-col gap-1 items-start">
+                        <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold">คืนรถแล้ว</span>
+                        ${remark && remark !== '-' ? `<span class="text-[11px] text-gray-600 font-medium max-w-[170px] truncate" title="${remark}">${remark}</span>` : ''}
+                    </div>`;
             }
 
             let dateDisplay = formatDateShort(fromDate);
@@ -396,45 +421,114 @@ window.switchTab = function(tabId) {
 }
 
 // --- Actions (Approve / Reject) ---
-window.approveBooking = function(rowIndex) {
-    if(confirm("ยืนยันการอนุมัติคำขอจองรถนี้?")) {
-        submitStatusUpdate(rowIndex, "Approved", "");
+const approveModal = document.getElementById('approve-modal');
+const approveForm = document.getElementById('modal-approve-form');
+
+window.openApproveModal = function(rowIndex) {
+    document.getElementById('approve-row-index').value = rowIndex;
+    const lastAdmin = localStorage.getItem('sis_last_admin');
+    const approveUserSelect = document.getElementById('approve-user');
+    if (approveUserSelect && lastAdmin !== null && lastAdmin !== undefined && lastAdmin !== "") {
+        approveUserSelect.value = lastAdmin;
     }
+    document.getElementById('approve-remark').value = '';
+    approveModal.classList.remove('hidden');
+};
+
+window.closeApproveModal = function() {
+    approveModal.classList.add('hidden');
+    if(approveForm) approveForm.reset();
+};
+
+if(approveForm) {
+    approveForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const rIndex = document.getElementById('approve-row-index').value;
+        const uIdx = document.getElementById('approve-user').value;
+        if(uIdx === "") {
+            alert("กรุณาเลือกรายชื่อผู้อนุมัติ");
+            return;
+        }
+        localStorage.setItem('sis_last_admin', uIdx);
+        const u = userDB[uIdx] || {};
+        const name = u['Name'] || u['ชื่อ'] || 'ผู้ดูแลระบบ';
+        const nick = u['Nickname'] || u['ชื่อเล่น'] || '';
+        const actorName = `${name}${nick ? ` (${nick})` : ''}`;
+        
+        const extra = document.getElementById('approve-remark').value.trim();
+        const fullRemark = `Approved โดย ${actorName}${extra ? ` - ${extra}` : ''}`;
+        
+        submitStatusUpdate(rIndex, "Approved", fullRemark, actorName);
+        closeApproveModal();
+    });
 }
 
 const rejectModal = document.getElementById('reject-modal');
 const rejectForm = document.getElementById('modal-reject-form');
+
 window.openRejectModal = function(rowIndex) {
     document.getElementById('reject-row-index').value = rowIndex;
+    const lastAdmin = localStorage.getItem('sis_last_admin');
+    const rejectUserSelect = document.getElementById('reject-user');
+    if (rejectUserSelect && lastAdmin !== null && lastAdmin !== undefined && lastAdmin !== "") {
+        rejectUserSelect.value = lastAdmin;
+    }
+    document.getElementById('reject-reason').value = '';
     rejectModal.classList.remove('hidden');
-}
+};
+
 window.closeRejectModal = function() {
     rejectModal.classList.add('hidden');
-    rejectForm.reset();
-}
+    if(rejectForm) rejectForm.reset();
+};
+
 if(rejectForm) {
     rejectForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const rIndex = document.getElementById('reject-row-index').value;
-        const reason = document.getElementById('reject-reason').value;
-        submitStatusUpdate(rIndex, "Rejected", reason);
+        const uIdx = document.getElementById('reject-user').value;
+        if(uIdx === "") {
+            alert("กรุณาเลือกรายชื่อผู้ดำเนินการ");
+            return;
+        }
+        localStorage.setItem('sis_last_admin', uIdx);
+        const u = userDB[uIdx] || {};
+        const name = u['Name'] || u['ชื่อ'] || 'ผู้ดูแลระบบ';
+        const nick = u['Nickname'] || u['ชื่อเล่น'] || '';
+        const actorName = `${name}${nick ? ` (${nick})` : ''}`;
+
+        const reason = document.getElementById('reject-reason').value.trim();
+        const fullRemark = `Rejected โดย ${actorName} - เหตุผล: ${reason}`;
+        
+        submitStatusUpdate(rIndex, "Rejected", fullRemark, actorName);
         closeRejectModal();
     });
 }
 
-function submitStatusUpdate(rowIndex, newStatus, reason) {
+function submitStatusUpdate(rowIndex, newStatus, fullRemark, actorName) {
     const booking = appState.bookings.find(b => b._rowIndex === parseInt(rowIndex));
     if(booking) {
         const keys = Object.keys(booking);
-        const statusKey = keys.find(k => k.toLowerCase().includes('สถานะ'));
-        const remarkKey = keys.find(k => k.toLowerCase().includes('หมายเหตุ'));
-        if(statusKey) booking[statusKey] = newStatus;
-        if(remarkKey && reason) booking[remarkKey] = reason;
+        const statusKey = keys.find(k => k.toLowerCase().includes('สถานะ')) || 'สถานะ';
+        const remarkKey = keys.find(k => k.toLowerCase().includes('หมายเหตุ')) || 'หมายเหตุ';
+        booking[statusKey] = newStatus;
+        booking[remarkKey] = fullRemark;
+        try { localStorage.setItem('sis_history', JSON.stringify(appState.bookings)); } catch(e){}
         appState.renderDashboard();
         appState.renderTimeline();
     }
 
-    const payload = { action: "update_status", rowIndex: rowIndex, status: newStatus, rejectReason: reason };
+    const payload = { 
+        action: "update_status", 
+        rowIndex: rowIndex, 
+        status: newStatus, 
+        rejectReason: fullRemark, // For backwards compatibility with older Apps Script code
+        remark: fullRemark,
+        note: fullRemark,
+        reason: fullRemark,
+        actorName: actorName,
+        approvedBy: actorName
+    };
     
     fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
@@ -444,8 +538,11 @@ function submitStatusUpdate(rowIndex, newStatus, reason) {
     .then(r => r.json())
     .then(data => {
         if(data.status !== "success") alert(`❌ อัปเดตล้มเหลว: ${data.message}`);
+        else {
+            appState.fetchBookings(); // Sync silently
+        }
     }).catch(err => {
-        alert("❌ ไม่สามารถติดต่อเซิร์ฟเวอร์ได้");
+        console.warn("Server update notice:", err);
     });
 }
 

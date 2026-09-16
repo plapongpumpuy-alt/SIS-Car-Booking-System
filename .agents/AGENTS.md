@@ -24,3 +24,4 @@
 - GitHub Pages selected for public hosting (2026-09-16 15:12). MinGit configured, repo initialized, and deployment pipeline prepared.
 - Published live via GitHub Pages branch `gh-pages` at `https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/` (2026-09-16 15:30).
 - Implemented Instant Local Caching (LocalStorage + Master Data Fallback) with background SWR sync to resolve slow dropdown loading caused by Google Apps Script cold starts (2026-09-16 15:39).
+- Added Approver/Rejector identity tracking modal and formatted remark output to Column N (`หมายเหตุ`) (2026-09-16 15:55).
