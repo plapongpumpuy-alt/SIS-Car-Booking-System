@@ -20,19 +20,19 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 /* Smooth modal transitions */
-#submit-modal:not(.hidden), #slip-modal:not(.hidden), #email-modal:not(.hidden) {
-    display: flex;
+#submit-modal:not(.hidden), #return-modal:not(.hidden), #slip-modal:not(.hidden), #email-modal:not(.hidden) {
+    display: flex !important;
 }
-#submit-modal.show, #slip-modal.show, #email-modal.show {
-    opacity: 1;
+#submit-modal.show, #return-modal.show, #slip-modal.show, #email-modal.show {
+    opacity: 1 !important;
 }
-#submit-modal.show > div, #slip-modal.show > div, #email-modal.show > div {
-    transform: scale(1);
+#submit-modal.show > div, #return-modal.show > div, #slip-modal.show > div, #email-modal.show > div {
+    transform: scale(1) !important;
 }
 
-/* Printable Vehicle Usage Slip Styles */
+/* Printable Vehicle Usage Slip Styles (Displayed in Preview & Print) */
 #printable-slip {
-    display: none;
+    display: block;
 }
 
 @media print {

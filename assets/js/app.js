@@ -533,147 +533,170 @@ if (returnForm) {
 }
 
 // --- Vehicle Usage Slip & PDF Printing ---
-const slipModal = document.getElementById('slip-modal');
-
 window.openSlipModal = function(rowIndex) {
-    if (!slipModal) return;
-    const booking = appState.bookings.find(b => b._rowIndex === parseInt(rowIndex)) || 
-                    appState.bookings[rowIndex] || {};
-    
-    // 1. Resolve User details
-    const userIdentifier = getVal(booking, ['email', 'อีเมล', 'ชื่อผู้จอง', 'ผู้จอง', 'ชื่อ', 'พนักงาน', 'คนจอง', 'gmail']);
-    let matchedUser = userDB.find(u => {
-        const uEmail = (u['Email'] || '').toLowerCase();
-        const uName = (u['Name'] || u['ชื่อ'] || '').toLowerCase();
-        const uNick = (u['Nickname'] || u['ชื่อเล่น'] || '').toLowerCase();
-        const ident = userIdentifier.toLowerCase();
-        return (uEmail && ident.includes(uEmail)) || 
-               (uName && (ident.includes(uName) || uName.includes(ident))) || 
-               (uNick && ident.includes(uNick));
-    }) || {};
-
-    const displayName = matchedUser['Name'] || matchedUser['ชื่อ'] || userIdentifier;
-    const displayNick = matchedUser['Nickname'] || matchedUser['ชื่อเล่น'] || '';
-    const displayPos = matchedUser['Position'] || matchedUser['ตำแหน่ง'] || '-';
-    const displayTel = matchedUser['Tel'] || matchedUser['เบอร์โทร'] || '-';
-    const displayEmail = matchedUser['Email'] || (userIdentifier.includes('@') ? userIdentifier : '-');
-
-    // 2. Resolve Car details
-    const plate = getVal(booking, ['plate', 'ทะเบียนรถ', 'ทะเบียน', 'รถ', 'ยานพาหนะ']);
-    let matchedCar = vehicleDB.find(c => {
-        const cPlate = c['ทะเบียนรถ'] || c['Plate'] || '';
-        return cPlate && plate.includes(cPlate);
-    }) || {};
-
-    const displayModel = `${matchedCar['ยี่ห้อ'] || ''} ${matchedCar['รุ่น'] || ''} ${matchedCar['สี'] ? `(${matchedCar['สี']})` : ''}`.trim() || '-';
-    const displayCarCode = matchedCar['Code'] || matchedCar['รหัสรถ'] || '-';
-    const displayCarManager = matchedCar['ชื่อคนดูแล'] || matchedCar['ผู้ดูแล'] || '-';
-
-    // 3. Trip & Dates
-    const purpose = getVal(booking, ['purpose', 'ไปทำอะไร', 'จุดประสงค์']);
-    const dest = getVal(booking, ['destination', 'ไปที่ไหน', 'สถานที่']);
-    const fromDate = getVal(booking, ['fromdate', 'วันที่เดินทาง', 'ตั้งแต่วันที่', 'จากวันที่']);
-    const toDate = getVal(booking, ['todate', 'ถึงวันที่', 'วันสิ้นสุด']);
-    const days = getVal(booking, ['days', 'จำนวนวัน', 'กี่วัน']);
-    const statusRaw = getVal(booking, ['status', 'สถานะ']);
-    const remark = getVal(booking, ['remark', 'หมายเหตุ', 'เหตุผล']);
-
-    let dateDisplay = formatDateShort(fromDate);
-    if (fromDate !== toDate && toDate !== '-') dateDisplay += ` ถึง ${formatDateShort(toDate)}`;
-
-    // 4. Odometer & Mileage
-    const mOut = getVal(booking, ['mileageout', 'ไมล์ออก', 'เลขไมล์ออก']);
-    const mIn = getVal(booking, ['mileagein', 'ไมล์เข้า', 'เลขไมล์เข้า']);
-    const mOutNum = parseFloat(mOut);
-    const mInNum = parseFloat(mIn);
-    let totalKm = '-';
-    if (!isNaN(mInNum) && !isNaN(mOutNum) && mInNum >= mOutNum) {
-        totalKm = (mInNum - mOutNum).toLocaleString() + ' กม.';
+    const slipModal = document.getElementById('slip-modal');
+    if (!slipModal) {
+        console.error("slipModal element not found!");
+        return;
     }
 
-    // 5. Toll Fee & Toll Balance
-    const tollFee = getVal(booking, ['tollfee', 'ค่าทางด่วน']);
-    const tollBalance = getVal(booking, ['tollbalance', 'ทางด่วนคงเหลือ']);
-    const tollFeeNum = parseFloat(tollFee) || 0;
+    try {
+        const booking = appState.bookings.find(b => b._rowIndex === parseInt(rowIndex)) || 
+                        appState.bookings[rowIndex] || {};
+        
+        // 1. Resolve User details
+        const userIdentifier = getVal(booking, ['email', 'อีเมล', 'ชื่อผู้จอง', 'ผู้จอง', 'ชื่อ', 'พนักงาน', 'คนจอง', 'gmail']);
+        let matchedUser = userDB.find(u => {
+            const uEmail = (u['Email'] || '').toLowerCase();
+            const uName = (u['Name'] || u['ชื่อ'] || '').toLowerCase();
+            const uNick = (u['Nickname'] || u['ชื่อเล่น'] || '').toLowerCase();
+            const ident = userIdentifier.toLowerCase();
+            return (uEmail && ident.includes(uEmail)) || 
+                   (uName && (ident.includes(uName) || uName.includes(ident))) || 
+                   (uNick && ident.includes(uNick));
+        }) || {};
 
-    // Doc Number & Date
-    const today = new Date();
-    const docDateStr = today.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
-    const ymd = today.toISOString().slice(0, 10).replace(/-/g, '');
-    const docNo = `SIS-${ymd}-${String(rowIndex || 1).padStart(3, '0')}`;
+        const displayName = matchedUser['Name'] || matchedUser['ชื่อ'] || userIdentifier;
+        const displayNick = matchedUser['Nickname'] || matchedUser['ชื่อเล่น'] || '';
+        const displayPos = matchedUser['Position'] || matchedUser['ตำแหน่ง'] || '-';
+        const displayTel = matchedUser['Tel'] || matchedUser['เบอร์โทร'] || '-';
+        const displayEmail = matchedUser['Email'] || (userIdentifier.includes('@') ? userIdentifier : '-');
 
-    // Fill DOM in Slip
-    document.getElementById('slip-doc-no').textContent = docNo;
-    document.getElementById('slip-doc-date').textContent = docDateStr;
+        // 2. Resolve Car details
+        const plate = getVal(booking, ['plate', 'ทะเบียนรถ', 'ทะเบียน', 'รถ', 'ยานพาหนะ']);
+        let matchedCar = vehicleDB.find(c => {
+            const cPlate = c['ทะเบียนรถ'] || c['Plate'] || '';
+            return cPlate && plate.includes(cPlate);
+        }) || {};
 
-    // Status Badge
-    const badgeEl = document.getElementById('slip-status-badge');
-    const sLower = (statusRaw || '').toString().toLowerCase();
-    if (sLower.includes('complete') || sLower.includes('คืน')) {
-        badgeEl.textContent = 'คืนรถแล้ว';
-        badgeEl.className = 'mt-1.5 inline-block text-[11px] px-2 py-0.5 rounded font-bold uppercase border bg-slate-100 text-slate-700 border-slate-300';
-    } else if (sLower.includes('approve') || sLower.includes('อนุมัติ')) {
-        badgeEl.textContent = 'อนุมัติแล้ว';
-        badgeEl.className = 'mt-1.5 inline-block text-[11px] px-2 py-0.5 rounded font-bold uppercase border bg-emerald-50 text-emerald-700 border-emerald-300';
-    } else {
-        badgeEl.textContent = 'รอการใช้งาน';
-        badgeEl.className = 'mt-1.5 inline-block text-[11px] px-2 py-0.5 rounded font-bold uppercase border bg-amber-50 text-amber-700 border-amber-300';
+        const displayModel = `${matchedCar['ยี่ห้อ'] || ''} ${matchedCar['รุ่น'] || ''} ${matchedCar['สี'] ? `(${matchedCar['สี']})` : ''}`.trim() || '-';
+        const displayCarCode = matchedCar['Code'] || matchedCar['รหัสรถ'] || '-';
+        const displayCarManager = matchedCar['ชื่อคนดูแล'] || matchedCar['ผู้ดูแล'] || '-';
+
+        // 3. Trip & Dates
+        const purpose = getVal(booking, ['purpose', 'ไปทำอะไร', 'จุดประสงค์']);
+        const dest = getVal(booking, ['destination', 'ไปที่ไหน', 'สถานที่']);
+        const fromDate = getVal(booking, ['fromdate', 'วันที่เดินทาง', 'ตั้งแต่วันที่', 'จากวันที่']);
+        const toDate = getVal(booking, ['todate', 'ถึงวันที่', 'วันสิ้นสุด']);
+        const days = getVal(booking, ['days', 'จำนวนวัน', 'กี่วัน']);
+        const statusRaw = getVal(booking, ['status', 'สถานะ']);
+        const remark = getVal(booking, ['remark', 'หมายเหตุ', 'เหตุผล']);
+
+        let dateDisplay = formatDateShort(fromDate);
+        if (fromDate !== toDate && toDate !== '-') dateDisplay += ` ถึง ${formatDateShort(toDate)}`;
+
+        // 4. Odometer & Mileage
+        const mOut = getVal(booking, ['mileageout', 'ไมล์ออก', 'เลขไมล์ออก']);
+        const mIn = getVal(booking, ['mileagein', 'ไมล์เข้า', 'เลขไมล์เข้า']);
+        const mOutNum = parseFloat(mOut);
+        const mInNum = parseFloat(mIn);
+        let totalKm = '-';
+        if (!isNaN(mInNum) && !isNaN(mOutNum) && mInNum >= mOutNum) {
+            totalKm = (mInNum - mOutNum).toLocaleString() + ' กม.';
+        }
+
+        // 5. Toll Fee & Toll Balance
+        const tollFee = getVal(booking, ['tollfee', 'ค่าทางด่วน']);
+        const tollBalance = getVal(booking, ['tollbalance', 'ทางด่วนคงเหลือ']);
+        const tollFeeNum = parseFloat(tollFee) || 0;
+
+        // Doc Number & Date
+        const today = new Date();
+        const docDateStr = today.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+        const ymd = today.toISOString().slice(0, 10).replace(/-/g, '');
+        const docNo = `SIS-${ymd}-${String(rowIndex || 1).padStart(3, '0')}`;
+
+        // Fill DOM in Slip
+        const setTxt = (id, txt) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = txt;
+        };
+
+        setTxt('slip-doc-no', docNo);
+        setTxt('slip-doc-date', docDateStr);
+
+        // Status Badge
+        const badgeEl = document.getElementById('slip-status-badge');
+        if (badgeEl) {
+            const sLower = (statusRaw || '').toString().toLowerCase();
+            if (sLower.includes('complete') || sLower.includes('คืน')) {
+                badgeEl.textContent = 'คืนรถแล้ว';
+                badgeEl.className = 'mt-1.5 inline-block text-[11px] px-2 py-0.5 rounded font-bold uppercase border bg-slate-100 text-slate-700 border-slate-300';
+            } else if (sLower.includes('approve') || sLower.includes('อนุมัติ')) {
+                badgeEl.textContent = 'อนุมัติแล้ว';
+                badgeEl.className = 'mt-1.5 inline-block text-[11px] px-2 py-0.5 rounded font-bold uppercase border bg-emerald-50 text-emerald-700 border-emerald-300';
+            } else {
+                badgeEl.textContent = 'รอการใช้งาน';
+                badgeEl.className = 'mt-1.5 inline-block text-[11px] px-2 py-0.5 rounded font-bold uppercase border bg-amber-50 text-amber-700 border-amber-300';
+            }
+        }
+
+        // Populate Info
+        setTxt('slip-user-name', `${displayName} ${displayNick ? `(${displayNick})` : ''}`);
+        setTxt('slip-user-position', displayPos);
+        setTxt('slip-user-tel', displayTel);
+        setTxt('slip-user-email', displayEmail);
+
+        setTxt('slip-car-plate', plate !== '-' ? plate : 'ไม่ระบุ');
+        setTxt('slip-car-model', displayModel);
+        setTxt('slip-car-code', displayCarCode);
+        setTxt('slip-car-manager', displayCarManager);
+
+        setTxt('slip-purpose', purpose !== '-' ? purpose : 'ปฏิบัติงานตามที่ได้รับมอบหมาย');
+        setTxt('slip-dest', dest !== '-' ? dest : '-');
+        setTxt('slip-dates', dateDisplay);
+        setTxt('slip-days', days !== '-' ? (days.includes('วัน') ? days : `${days} วัน`) : '1 วัน');
+
+        setTxt('slip-mileage-out', (mOut && mOut !== '-') ? parseFloat(mOut).toLocaleString() + ' กม.' : 'ไม่ได้ระบุ');
+        setTxt('slip-mileage-in', (mIn && mIn !== '-') ? parseFloat(mIn).toLocaleString() + ' กม.' : '-');
+        setTxt('slip-mileage-total', totalKm);
+
+        // Toll Fee Row
+        setTxt('slip-table-toll', tollFeeNum > 0 ? tollFeeNum.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00');
+        let tollNote = '-';
+        if (tollBalance && tollBalance !== '-') {
+            tollNote = `คงเหลือในบัตร Easy Pass: ${parseFloat(tollBalance).toLocaleString()} บาท`;
+        }
+        setTxt('slip-table-toll-note', tollNote);
+
+        // Signatures
+        setTxt('slip-sign-requester', `( ${displayName} )`);
+        
+        // Approver matching
+        let approverName = '....................................................';
+        if (remark && (remark.includes('Approved โดย') || remark.includes('อนุมัติโดย'))) {
+            approverName = remark.replace(/^Approved โดย\s*/i, '').replace(/^อนุมัติโดย\s*/i, '').trim();
+        }
+        setTxt('slip-sign-approver', `( ${approverName} )`);
+        setTxt('slip-sign-caretaker', `( ${displayCarManager !== '-' ? displayCarManager : '....................................................'} )`);
+
+        // Reset Quick inputs & recalculate
+        const fuelIn = document.getElementById('slip-input-fuel');
+        if (fuelIn) fuelIn.value = '';
+        const fuelBillsIn = document.getElementById('slip-input-fuel-bills');
+        if (fuelBillsIn) fuelBillsIn.value = '1';
+        const otherIn = document.getElementById('slip-input-other');
+        if (otherIn) otherIn.value = '';
+        window.updateSlipAccountingValues();
+
+        // Show modal
+        slipModal.classList.remove('hidden');
+        slipModal.style.display = 'flex';
+        setTimeout(() => slipModal.classList.add('show', 'opacity-100'), 10);
+    } catch(err) {
+        console.error("Error opening slip modal:", err);
+        alert("เกิดข้อผิดพลาดในการโหลดข้อมูลใบใช้รถ: " + err.message);
     }
-
-    // Populate Info
-    document.getElementById('slip-user-name').textContent = `${displayName} ${displayNick ? `(${displayNick})` : ''}`;
-    document.getElementById('slip-user-position').textContent = displayPos;
-    document.getElementById('slip-user-tel').textContent = displayTel;
-    document.getElementById('slip-user-email').textContent = displayEmail;
-
-    document.getElementById('slip-car-plate').textContent = plate !== '-' ? plate : 'ไม่ระบุ';
-    document.getElementById('slip-car-model').textContent = displayModel;
-    document.getElementById('slip-car-code').textContent = displayCarCode;
-    document.getElementById('slip-car-manager').textContent = displayCarManager;
-
-    document.getElementById('slip-purpose').textContent = purpose !== '-' ? purpose : 'ปฏิบัติงานตามที่ได้รับมอบหมาย';
-    document.getElementById('slip-dest').textContent = dest !== '-' ? dest : '-';
-    document.getElementById('slip-dates').textContent = dateDisplay;
-    document.getElementById('slip-days').textContent = days !== '-' ? (days.includes('วัน') ? days : `${days} วัน`) : '1 วัน';
-
-    document.getElementById('slip-mileage-out').textContent = (mOut && mOut !== '-') ? parseFloat(mOut).toLocaleString() + ' กม.' : 'ไม่ได้ระบุ';
-    document.getElementById('slip-mileage-in').textContent = (mIn && mIn !== '-') ? parseFloat(mIn).toLocaleString() + ' กม.' : '-';
-    document.getElementById('slip-mileage-total').textContent = totalKm;
-
-    // Toll Fee Row
-    document.getElementById('slip-table-toll').textContent = tollFeeNum > 0 ? tollFeeNum.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00';
-    let tollNote = '-';
-    if (tollBalance && tollBalance !== '-') {
-        tollNote = `คงเหลือในบัตร Easy Pass: ${parseFloat(tollBalance).toLocaleString()} บาท`;
-    }
-    document.getElementById('slip-table-toll-note').textContent = tollNote;
-
-    // Signatures
-    document.getElementById('slip-sign-requester').textContent = `( ${displayName} )`;
-    
-    // Approver matching
-    let approverName = '....................................................';
-    if (remark && (remark.includes('Approved โดย') || remark.includes('อนุมัติโดย'))) {
-        approverName = remark.replace(/^Approved โดย\s*/i, '').replace(/^อนุมัติโดย\s*/i, '').trim();
-    }
-    document.getElementById('slip-sign-approver').textContent = `( ${approverName} )`;
-    document.getElementById('slip-sign-caretaker').textContent = `( ${displayCarManager !== '-' ? displayCarManager : '....................................................'} )`;
-
-    // Reset Quick inputs & recalculate
-    document.getElementById('slip-input-fuel').value = '';
-    document.getElementById('slip-input-fuel-bills').value = '1';
-    document.getElementById('slip-input-other').value = '';
-    window.updateSlipAccountingValues();
-
-    // Show modal
-    slipModal.classList.remove('hidden');
-    setTimeout(() => slipModal.classList.add('show', 'opacity-100'), 10);
 };
 
 window.closeSlipModal = function() {
+    const slipModal = document.getElementById('slip-modal');
     if (!slipModal) return;
     slipModal.classList.remove('show', 'opacity-100');
-    setTimeout(() => slipModal.classList.add('hidden'), 250);
+    setTimeout(() => {
+        slipModal.classList.add('hidden');
+        slipModal.style.display = 'none';
+    }, 250);
 };
 
 window.updateSlipAccountingValues = function() {
@@ -747,9 +770,8 @@ window.downloadSlipPDF = function() {
 };
 
 // --- Email Forwarding for Accounting Slip ---
-const emailModal = document.getElementById('email-modal');
-
 window.openEmailModal = function() {
+    const emailModal = document.getElementById('email-modal');
     if (!emailModal) return;
 
     const docNo = document.getElementById('slip-doc-no')?.textContent || '-';
@@ -800,13 +822,18 @@ ${userName}`;
     document.getElementById('email-body').value = body;
 
     emailModal.classList.remove('hidden');
+    emailModal.style.display = 'flex';
     setTimeout(() => emailModal.classList.add('show', 'opacity-100'), 10);
 };
 
 window.closeEmailModal = function() {
+    const emailModal = document.getElementById('email-modal');
     if (!emailModal) return;
     emailModal.classList.remove('show', 'opacity-100');
-    setTimeout(() => emailModal.classList.add('hidden'), 250);
+    setTimeout(() => {
+        emailModal.classList.add('hidden');
+        emailModal.style.display = 'none';
+    }, 250);
 };
 
 window.sendViaGmail = function() {
