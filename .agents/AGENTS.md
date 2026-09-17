@@ -29,3 +29,4 @@
 - Implemented Vehicle Usage Report & Expense Claim Slip (ใบขอใช้รถยนต์และบันทึกการเดินทาง) with `@media print` A4 layout, interactive fuel/receipt adjust toolbar, and accounting attachment section (2026-09-17 08:41).
 - Added 1-click Download PDF (`html2pdf.js`), Send Email to Accounting modal (Gmail Web & mailto), and made entire table rows clickable (2026-09-17 08:55).
 - Configured default accounting submission recipient to `sisintegration005@gmail.com` and added CC field support for Gmail Web & mailto (2026-09-17 09:03).
+- Added official company corporate branding (SIS Integration Co.,Ltd. / บริษัท เอสไอเอส อินติเกรชั่น จำกัด (สำนักงานใหญ่), full registered address, Tax ID, phone numbers, and company logo) to the Vehicle Usage Report (2026-09-17 09:15).

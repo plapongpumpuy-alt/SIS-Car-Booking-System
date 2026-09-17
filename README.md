@@ -1,12 +1,18 @@
 # SIS Car Booking System
-**Version:** v.2026.09.17.0903
-**Last Updated:** 2026-09-17 09:03:00+07:00
+**Version:** v.2026.09.17.0915
+**Last Updated:** 2026-09-17 09:15:00+07:00
 **Live Website (GitHub Pages):** [https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/](https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/)
 
 ## Overview
 Welcome to the SIS Car Booking System. This document serves as the main user manual and work log.
 
 ## Work Log / Changelog
+- **2026-09-17 09:15**: Added Official SIS Integration Corporate Header & Logo to Vehicle Usage Report:
+  - Applied official Thai company name: `บริษัท เอสไอเอส อินติเกรชั่น จำกัด (สำนักงานใหญ่)`
+  - Applied official English company name: `SIS Integration Co.,Ltd. (Head Office)`
+  - Full registered address: `61/561 ซอยประชาร่วมใจ 31 แขวงทรายกองดิน เขตคลองสามวา กรุงเทพฯ 10510`
+  - Registered Tax ID: `0105533042856` | Phone: `02-101-0834, 089-115-0330`
+  - Integrated official SIS logo icon (`assets/images/logo.png`) in the document header.
 - **2026-09-17 09:03**: Updated accounting email target and added CC support:
   - Set default recipient to `sisintegration005@gmail.com`.
   - Added interactive CC (Carbon Copy) field in the Email modal for forwarding copies to supervisors/team members.
