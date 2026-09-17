@@ -20,12 +20,74 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 /* Smooth modal transitions */
-#submit-modal:not(.hidden) {
+#submit-modal:not(.hidden), #slip-modal:not(.hidden) {
     display: flex;
 }
-#submit-modal.show {
+#submit-modal.show, #slip-modal.show {
     opacity: 1;
 }
-#submit-modal.show > div {
+#submit-modal.show > div, #slip-modal.show > div {
     transform: scale(1);
+}
+
+/* Printable Vehicle Usage Slip Styles */
+#printable-slip {
+    display: none;
+}
+
+@media print {
+    /* Hide all web interface components */
+    body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        font-family: 'Prompt', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    header, main, footer, #submit-modal, #return-modal, .tab-btn, #slip-modal-dialog-header, #slip-modal-dialog-footer, #slip-quick-inputs {
+        display: none !important;
+    }
+
+    #slip-modal {
+        position: static !important;
+        background: transparent !important;
+        padding: 0 !important;
+        display: block !important;
+        opacity: 1 !important;
+    }
+
+    #slip-modal > div {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        transform: none !important;
+    }
+
+    #slip-preview-container {
+        padding: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+        background: white !important;
+    }
+
+    #printable-slip {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        page-break-inside: avoid;
+    }
+
+    @page {
+        size: A4 portrait;
+        margin: 8mm 10mm 8mm 10mm;
+    }
 }

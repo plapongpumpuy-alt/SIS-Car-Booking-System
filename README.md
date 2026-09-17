@@ -1,12 +1,18 @@
 # SIS Car Booking System
-**Version:** v.2026.09.16.1631
-**Last Updated:** 2026-09-16 16:31:00+07:00
+**Version:** v.2026.09.17.0841
+**Last Updated:** 2026-09-17 08:41:00+07:00
 **Live Website (GitHub Pages):** [https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/](https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/)
 
 ## Overview
 Welcome to the SIS Car Booking System. This document serves as the main user manual and work log.
 
 ## Work Log / Changelog
+- **2026-09-17 08:41**: Added Vehicle Usage Report & Expense Claim Slip (ใบขอใช้รถยนต์และบันทึกการเดินทาง) in official A4 PDF format. Features include:
+  - Print/Save as PDF button on Dashboard for approved and completed trips.
+  - Interactive preview modal with quick adjust toolbar for fuel expense (ค่าน้ำมัน) and receipt counts.
+  - Automatic calculation of odometer differences (ไมล์เข้า - ไมล์ออก) and total claim expenses.
+  - Standard 4-party corporate signatures (Applicant/Driver, Approver, Caretaker, Accounting & Finance).
+  - Clean `@media print` CSS ensuring 1-page A4 print layout without web chrome or menus.
 - **2026-09-16 16:31**: Streamlined approval workflow to be strictly managed via Telegram Bot. Removed Approve/Reject buttons from Web App, keeping Web App focused on booking creation, vehicle returns, and real-time dashboard visibility.
 - **2026-09-16 15:55**: Added Approver/Rejector identification modal and formatted remark recording for Column N (`หมายเหตุ`). Approving/Rejecting now records the action taker's name (e.g. `Approved โดย นาย...` / `Rejected โดย นาย... - เหตุผล: ...`).
 - **2026-09-16 15:39**: Fixed slow initial loading of employee and vehicle dropdowns by implementing Instant Local Caching (LocalStorage + Master Data Fallback) with background Google Apps Script sync (SWR pattern). Dropdowns now load in 0ms immediately.

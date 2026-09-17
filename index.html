@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
     <script>
         tailwind.config = {
             theme: {
@@ -323,6 +324,261 @@
                     <button type="submit" id="return-submit-btn" class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition shadow-sm"><i class="fa-solid fa-floppy-disk mr-1"></i> อัปเดตข้อมูล</button>
                 </div>
             </form>
+    <!-- Vehicle Usage Slip Preview Modal -->
+    <div id="slip-modal" class="fixed inset-0 bg-slate-900 bg-opacity-60 z-[100] hidden items-center justify-center backdrop-blur-sm transition-opacity opacity-0 p-2 sm:p-6 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full my-auto overflow-hidden flex flex-col max-h-[96vh] border border-gray-100">
+            
+            <!-- Modal Header -->
+            <div id="slip-modal-dialog-header" class="p-4 sm:px-6 sm:py-3.5 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800 shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-lg bg-sky-500 flex items-center justify-center text-white shadow">
+                        <i class="fa-solid fa-file-invoice-dollar text-base"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base sm:text-lg font-bold">พิมพ์ใบขอใช้รถยนต์และบันทึกค่าใช้จ่าย (Vehicle Usage Slip)</h3>
+                        <p class="text-xs text-slate-300">สำหรับแนบบิลน้ำมัน / ค่าทางด่วน ส่งฝ่ายบัญชีและการเงิน</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="printSlip()" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 shadow">
+                        <i class="fa-solid fa-print"></i> พิมพ์ / บันทึกเป็น PDF
+                    </button>
+                    <button type="button" onclick="closeSlipModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Adjust Toolbar for Accounting Slip -->
+            <div id="slip-quick-inputs" class="p-3 sm:px-6 sm:py-2.5 bg-sky-50 border-b border-sky-100 text-xs sm:text-sm flex flex-wrap gap-4 items-center shrink-0">
+                <div class="flex items-center gap-1.5 text-sky-900 font-semibold">
+                    <i class="fa-solid fa-sliders text-sky-600"></i> ปรับยอดแนบบัญชี:
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <label class="text-gray-600 font-medium">⛽ ค่าน้ำมัน:</label>
+                    <input type="number" id="slip-input-fuel" placeholder="0" class="w-24 px-2 py-1 bg-white border border-gray-300 rounded text-right font-medium text-gray-800 outline-none focus:ring-1 focus:ring-sky-500" oninput="updateSlipAccountingValues()">
+                    <span class="text-gray-500">บาท</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <label class="text-gray-600 font-medium">แนบใบเสร็จ:</label>
+                    <input type="number" id="slip-input-fuel-bills" placeholder="1" value="1" class="w-16 px-2 py-1 bg-white border border-gray-300 rounded text-center font-medium text-gray-800 outline-none focus:ring-1 focus:ring-sky-500" oninput="updateSlipAccountingValues()">
+                    <span class="text-gray-500">ใบ</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <label class="text-gray-600 font-medium">🅿️ ค่าใช้จ่ายอื่นๆ:</label>
+                    <input type="number" id="slip-input-other" placeholder="0" class="w-24 px-2 py-1 bg-white border border-gray-300 rounded text-right font-medium text-gray-800 outline-none focus:ring-1 focus:ring-sky-500" oninput="updateSlipAccountingValues()">
+                    <span class="text-gray-500">บาท</span>
+                </div>
+            </div>
+
+            <!-- Preview Container with Scroll -->
+            <div id="slip-preview-container" class="p-3 sm:p-6 overflow-y-auto flex-grow bg-slate-100">
+                
+                <!-- The Actual Printable Slip Content (Also shown in Preview) -->
+                <div id="printable-slip" class="bg-white p-5 sm:p-8 rounded-lg shadow-sm border border-gray-200 mx-auto max-w-[210mm] text-slate-900 leading-normal" style="font-family: 'Prompt', sans-serif;">
+                    
+                    <!-- Document Header -->
+                    <div class="border-b-2 border-slate-800 pb-3 mb-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">บริษัท เอสไอเอส คอนเนคชั่นส์ จำกัด</h1>
+                                <p class="text-xs text-slate-500 tracking-wide">SIS CONNECTIONS CO., LTD.</p>
+                                <h2 class="text-base sm:text-lg font-bold text-sky-800 mt-1">ใบขอใช้รถยนต์และบันทึกการเดินทาง (Vehicle Usage Report & Expense Claim)</h2>
+                                <p class="text-[11px] text-slate-500">สำหรับแนบหลักฐานบิลน้ำมัน / ค่าทางด่วน ส่งฝ่ายบัญชีและการเงิน</p>
+                            </div>
+                            <div class="text-right border-l pl-4 border-slate-200 shrink-0">
+                                <p class="text-[11px] text-slate-500">เลขที่เอกสาร / Ref No.</p>
+                                <p id="slip-doc-no" class="text-sm font-bold text-slate-800 font-mono">-</p>
+                                <p class="text-[11px] text-slate-500 mt-1">วันที่พิมพ์เอกสาร</p>
+                                <p id="slip-doc-date" class="text-xs font-semibold text-slate-700">-</p>
+                                <div id="slip-status-badge" class="mt-1.5 inline-block text-[11px] px-2 py-0.5 rounded font-bold uppercase border">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 1. Requester & Vehicle Box (2 Columns) -->
+                    <div class="grid grid-cols-2 gap-3 mb-3 text-xs">
+                        <div class="border border-slate-300 rounded p-2.5 bg-slate-50/50">
+                            <p class="font-bold text-slate-800 border-b pb-1 mb-1.5 text-xs flex items-center gap-1.5">
+                                <i class="fa-solid fa-user text-sky-600"></i> ข้อมูลผู้ขอใช้รถ / ผู้ขับขี่
+                            </p>
+                            <p><span class="font-semibold text-slate-600">ชื่อ-นามสกุล:</span> <span id="slip-user-name" class="font-bold text-slate-800">-</span></p>
+                            <p class="mt-0.5"><span class="font-semibold text-slate-600">ตำแหน่ง / แผนก:</span> <span id="slip-user-position">-</span></p>
+                            <p class="mt-0.5"><span class="font-semibold text-slate-600">เบอร์โทรศัพท์:</span> <span id="slip-user-tel">-</span></p>
+                            <p class="mt-0.5"><span class="font-semibold text-slate-600">อีเมล:</span> <span id="slip-user-email">-</span></p>
+                        </div>
+                        <div class="border border-slate-300 rounded p-2.5 bg-slate-50/50">
+                            <p class="font-bold text-slate-800 border-b pb-1 mb-1.5 text-xs flex items-center gap-1.5">
+                                <i class="fa-solid fa-car text-sky-600"></i> ข้อมูลยานพาหนะ
+                            </p>
+                            <p><span class="font-semibold text-slate-600">ทะเบียนรถ:</span> <span id="slip-car-plate" class="font-bold text-sky-900 px-1.5 py-0.5 bg-sky-50 border border-sky-200 rounded font-mono">-</span></p>
+                            <p class="mt-0.5"><span class="font-semibold text-slate-600">ยี่ห้อ / รุ่น / สี:</span> <span id="slip-car-model">-</span></p>
+                            <p class="mt-0.5"><span class="font-semibold text-slate-600">รหัสรถ (Car Code):</span> <span id="slip-car-code" class="font-semibold">-</span></p>
+                            <p class="mt-0.5"><span class="font-semibold text-slate-600">ผู้ดูแลรถประจำคัน:</span> <span id="slip-car-manager">-</span></p>
+                        </div>
+                    </div>
+
+                    <!-- 2. Purpose & Trip Details -->
+                    <div class="border border-slate-300 rounded p-2.5 mb-3 text-xs bg-slate-50/50">
+                        <p class="font-bold text-slate-800 border-b pb-1 mb-1.5 text-xs flex items-center gap-1.5">
+                            <i class="fa-solid fa-location-dot text-sky-600"></i> รายละเอียดภารกิจและกำหนดการเดินทาง
+                        </p>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="col-span-2">
+                                <p><span class="font-semibold text-slate-600">วัตถุประสงค์ (ไปทำอะไร):</span> <span id="slip-purpose" class="font-medium text-slate-900">-</span></p>
+                                <p class="mt-1"><span class="font-semibold text-slate-600">สถานที่ปลายทาง (ไปที่ไหน):</span> <span id="slip-dest" class="font-medium text-slate-900">-</span></p>
+                            </div>
+                            <div>
+                                <p><span class="font-semibold text-slate-600">ช่วงวันที่เดินทาง:</span></p>
+                                <p id="slip-dates" class="font-bold text-slate-800 mt-0.5">-</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5">รวมจำนวน: <span id="slip-days" class="font-semibold text-slate-800">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Odometer & Mileage Tracking -->
+                    <div class="border border-slate-300 rounded overflow-hidden mb-3 text-xs">
+                        <div class="bg-slate-100 px-3 py-1 font-bold text-slate-800 border-b border-slate-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-gauge-high text-sky-600"></i> บันทึกเลขไมล์การเดินทาง (Odometer Tracking)
+                        </div>
+                        <div class="grid grid-cols-3 text-center divide-x divide-slate-200 p-2">
+                            <div>
+                                <p class="text-[11px] text-slate-500 mb-0.5">เลขไมล์ก่อนเดินทาง (ไมล์ออก)</p>
+                                <p id="slip-mileage-out" class="font-bold text-sm text-slate-800 font-mono">-</p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] text-slate-500 mb-0.5">เลขไมล์หลังเดินทาง (ไมล์เข้า)</p>
+                                <p id="slip-mileage-in" class="font-bold text-sm text-slate-800 font-mono">-</p>
+                            </div>
+                            <div class="bg-sky-50/50">
+                                <p class="text-[11px] text-sky-700 font-semibold mb-0.5">ระยะทางรวมที่ใช้งานจริง</p>
+                                <p id="slip-mileage-total" class="font-bold text-sm text-sky-800 font-mono">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Expense Claim Table for Accounting -->
+                    <div class="border border-slate-300 rounded overflow-hidden mb-3 text-xs">
+                        <div class="bg-slate-100 px-3 py-1 font-bold text-slate-800 border-b border-slate-300 flex justify-between items-center">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-receipt text-sky-600"></i> สรุปรายการค่าใช้จ่ายที่ขอเบิกแนบบิล (Expense Claim Breakdown)</span>
+                            <span class="text-[10px] text-slate-500 font-normal">หน่วย: บาท (THB)</span>
+                        </div>
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-700 text-[11px]">
+                                    <th class="p-1.5 w-10 text-center font-semibold">ลำดับ</th>
+                                    <th class="p-1.5 font-semibold">รายการค่าใช้จ่าย</th>
+                                    <th class="p-1.5 text-right w-28 font-semibold">จำนวนเงิน (บาท)</th>
+                                    <th class="p-1.5 w-56 font-semibold">เอกสารแนบ / รายละเอียด</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 text-slate-800">
+                                <tr>
+                                    <td class="p-1.5 text-center text-slate-500">1</td>
+                                    <td class="p-1.5 font-medium">⛽ ค่าน้ำมันเชื้อเพลิง (Fuel Expense)</td>
+                                    <td id="slip-table-fuel" class="p-1.5 text-right font-mono font-semibold">0.00</td>
+                                    <td id="slip-table-fuel-note" class="p-1.5 text-slate-600 text-[11px]">แนบใบเสร็จ 1 ใบ</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-1.5 text-center text-slate-500">2</td>
+                                    <td class="p-1.5 font-medium">🛣️ ค่าผ่านทางพิเศษ / ทางด่วน (Expressway / Easy Pass)</td>
+                                    <td id="slip-table-toll" class="p-1.5 text-right font-mono font-semibold">0.00</td>
+                                    <td id="slip-table-toll-note" class="p-1.5 text-slate-600 text-[11px]">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-1.5 text-center text-slate-500">3</td>
+                                    <td class="p-1.5 font-medium">🅿️ ค่าใช้จ่ายอื่นๆ (เช่น ค่าที่จอดรถ / ค่าบริการ)</td>
+                                    <td id="slip-table-other" class="p-1.5 text-right font-mono font-semibold">0.00</td>
+                                    <td id="slip-table-other-note" class="p-1.5 text-slate-600 text-[11px]">-</td>
+                                </tr>
+                                <tr class="bg-sky-50/70 font-bold border-t-2 border-slate-300">
+                                    <td colspan="2" class="p-2 text-right text-slate-900">รวมเป็นเงินที่ขอเบิกจ่ายทั้งสิ้น (Total Claim Amount)</td>
+                                    <td id="slip-table-total" class="p-2 text-right font-mono text-sky-900 text-sm">0.00</td>
+                                    <td class="p-2 text-sky-800 text-[11px] font-semibold">บาท (THB)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="bg-amber-50 p-2 border-t border-amber-200 text-[11px] text-amber-900 flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-info text-amber-600 text-xs shrink-0"></i>
+                            <span><strong>คำชี้แจงสำหรับส่งบัญชี:</strong> กรุณาแนบใบเสร็จรับเงิน/ใบกำกับภาษีค่าน้ำมัน และสลิปค่าทางด่วนฉบับจริงเย็บติดด้านหลังเอกสารนี้ เพื่อส่งมอบให้ฝ่ายบัญชีและการเงินตรวจสอบ</span>
+                        </div>
+                    </div>
+
+                    <!-- 5. 4-Party Signatures Section -->
+                    <div class="border border-slate-300 rounded p-2 text-xs">
+                        <div class="grid grid-cols-4 gap-2 text-center">
+                            
+                            <!-- 1. Requester / Driver -->
+                            <div class="border border-slate-200 rounded p-2 flex flex-col justify-between min-h-[92px] bg-slate-50/30">
+                                <div>
+                                    <p class="font-bold text-slate-800 text-[11px]">ผู้ขอใช้รถ / ผู้ขับขี่</p>
+                                    <p class="text-[10px] text-slate-500">(ผู้เดินทาง)</p>
+                                </div>
+                                <div class="mt-4">
+                                    <p class="text-[10px] text-slate-400">ลงชื่อ .....................................................</p>
+                                    <p id="slip-sign-requester" class="text-[11px] font-semibold text-slate-700 mt-0.5">( .................................................... )</p>
+                                    <p class="text-[10px] text-slate-500 mt-0.5">วันที่: ...... / ...... / .........</p>
+                                </div>
+                            </div>
+
+                            <!-- 2. Approver / Manager -->
+                            <div class="border border-slate-200 rounded p-2 flex flex-col justify-between min-h-[92px] bg-slate-50/30">
+                                <div>
+                                    <p class="font-bold text-slate-800 text-[11px]">ผู้อนุมัติการใช้รถ</p>
+                                    <p class="text-[10px] text-slate-500">(หัวหน้างาน / ผู้จัดการ)</p>
+                                </div>
+                                <div class="mt-4">
+                                    <p class="text-[10px] text-slate-400">ลงชื่อ .....................................................</p>
+                                    <p id="slip-sign-approver" class="text-[11px] font-semibold text-slate-700 mt-0.5">( .................................................... )</p>
+                                    <p class="text-[10px] text-slate-500 mt-0.5">วันที่: ...... / ...... / .........</p>
+                                </div>
+                            </div>
+
+                            <!-- 3. Caretaker / Car Inspector -->
+                            <div class="border border-slate-200 rounded p-2 flex flex-col justify-between min-h-[92px] bg-slate-50/30">
+                                <div>
+                                    <p class="font-bold text-slate-800 text-[11px]">ผู้ตรวจรับมอบ-คืนรถ</p>
+                                    <p class="text-[10px] text-slate-500">(ผู้ดูแลรถ / ช่างประจำ)</p>
+                                </div>
+                                <div class="mt-4">
+                                    <p class="text-[10px] text-slate-400">ลงชื่อ .....................................................</p>
+                                    <p id="slip-sign-caretaker" class="text-[11px] font-semibold text-slate-700 mt-0.5">( .................................................... )</p>
+                                    <p class="text-[10px] text-slate-500 mt-0.5">วันที่: ...... / ...... / .........</p>
+                                </div>
+                            </div>
+
+                            <!-- 4. Accounting & Finance -->
+                            <div class="border border-slate-200 rounded p-2 flex flex-col justify-between min-h-[92px] bg-slate-50/30">
+                                <div>
+                                    <p class="font-bold text-slate-800 text-[11px]">ฝ่ายบัญชีและการเงิน</p>
+                                    <p class="text-[10px] text-slate-500">(ผู้ตรวจรับเอกสาร/ลงบัญชี)</p>
+                                </div>
+                                <div class="mt-4">
+                                    <p class="text-[10px] text-slate-400">ลงชื่อ .....................................................</p>
+                                    <p class="text-[11px] font-semibold text-slate-700 mt-0.5">( .................................................... )</p>
+                                    <p class="text-[10px] text-slate-500 mt-0.5">วันที่: ...... / ...... / .........</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div id="slip-modal-dialog-footer" class="p-3 sm:px-6 sm:py-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center shrink-0">
+                <p class="text-xs text-gray-500 hidden sm:block">💡 คำแนะนำ: เลือกปลายทางเป็น "Save as PDF" ในหน้าต่างพิมพ์ เพื่อบันทึกเป็นไฟล์ PDF ได้ทันที</p>
+                <div class="flex gap-2 ml-auto">
+                    <button type="button" onclick="closeSlipModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg text-xs sm:text-sm transition">
+                        ปิด
+                    </button>
+                    <button type="button" onclick="printSlip()" class="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg text-xs sm:text-sm transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-print"></i> สั่งพิมพ์ / บันทึก PDF
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
 
