@@ -1,12 +1,18 @@
 # SIS Car Booking System
-**Version:** v.2026.09.17.0857
-**Last Updated:** 2026-09-17 08:57:00+07:00
+**Version:** v.2026.09.17.0903
+**Last Updated:** 2026-09-17 09:03:00+07:00
 **Live Website (GitHub Pages):** [https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/](https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/)
 
 ## Overview
 Welcome to the SIS Car Booking System. This document serves as the main user manual and work log.
 
 ## Work Log / Changelog
+- **2026-09-17 09:03**: Updated accounting email target and added CC support:
+  - Set default recipient to `sisintegration005@gmail.com`.
+  - Added interactive CC (Carbon Copy) field in the Email modal for forwarding copies to supervisors/team members.
+  - Pre-filled CC with requester's email when applicable.
+  - Linked CC support to both Gmail Web Compose and desktop mailto clients.
+- **2026-09-17 08:57**: Fixed modal layout nesting and CSS display style so the slip report preview displays reliably.
 - **2026-09-17 08:55**: Enhanced Vehicle Usage Report with Direct PDF Download, Email Forwarding to Accounting, and Clickable Rows:
   - Enabled clicking directly on any table row in Dashboard to open the report preview.
   - Added 1-click **Download PDF** button using `html2pdf.js` with high-resolution A4 export.

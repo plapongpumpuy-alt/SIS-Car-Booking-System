@@ -818,6 +818,19 @@ window.openEmailModal = function() {
 ขอแสดงความนับถือ,
 ${userName}`;
 
+    const toInput = document.getElementById('email-recipients');
+    if (toInput) toInput.value = 'sisintegration005@gmail.com';
+
+    const ccInput = document.getElementById('email-cc');
+    if (ccInput) {
+        const userEmail = (document.getElementById('slip-user-email')?.textContent || '').trim();
+        if (userEmail && userEmail !== '-' && userEmail.includes('@') && !userEmail.includes('sisintegration005')) {
+            ccInput.value = userEmail;
+        } else {
+            ccInput.value = '';
+        }
+    }
+
     document.getElementById('email-subject').value = subject;
     document.getElementById('email-body').value = body;
 
@@ -837,18 +850,28 @@ window.closeEmailModal = function() {
 };
 
 window.sendViaGmail = function() {
-    const to = document.getElementById('email-recipients').value;
-    const su = document.getElementById('email-subject').value;
-    const body = document.getElementById('email-body').value;
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
+    const to = (document.getElementById('email-recipients')?.value || 'sisintegration005@gmail.com').trim();
+    const cc = (document.getElementById('email-cc')?.value || '').trim();
+    const su = document.getElementById('email-subject')?.value || '';
+    const body = document.getElementById('email-body')?.value || '';
+    
+    let gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
+    if (cc) {
+        gmailUrl += `&cc=${encodeURIComponent(cc)}`;
+    }
     window.open(gmailUrl, '_blank');
 };
 
 window.sendViaMailto = function() {
-    const to = document.getElementById('email-recipients').value;
-    const su = document.getElementById('email-subject').value;
-    const body = document.getElementById('email-body').value;
-    const mailtoUrl = `mailto:${to}?subject=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
+    const to = (document.getElementById('email-recipients')?.value || 'sisintegration005@gmail.com').trim();
+    const cc = (document.getElementById('email-cc')?.value || '').trim();
+    const su = document.getElementById('email-subject')?.value || '';
+    const body = document.getElementById('email-body')?.value || '';
+    
+    let mailtoUrl = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
+    if (cc) {
+        mailtoUrl += `&cc=${encodeURIComponent(cc)}`;
+    }
     window.location.href = mailtoUrl;
 };
 
