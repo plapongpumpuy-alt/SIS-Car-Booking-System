@@ -7,7 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=202609170855">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -339,9 +340,15 @@
                         <p class="text-xs text-slate-300">สำหรับแนบบิลน้ำมัน / ค่าทางด่วน ส่งฝ่ายบัญชีและการเงิน</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button type="button" onclick="printSlip()" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 shadow">
-                        <i class="fa-solid fa-print"></i> พิมพ์ / บันทึกเป็น PDF
+                <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
+                    <button type="button" onclick="downloadSlipPDF()" id="btn-download-pdf-top" class="px-2.5 sm:px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1 shadow">
+                        <i class="fa-solid fa-download"></i> <span class="hidden sm:inline">ดาวน์โหลด</span> PDF
+                    </button>
+                    <button type="button" onclick="openEmailModal()" class="px-2.5 sm:px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1 shadow">
+                        <i class="fa-solid fa-paper-plane"></i> <span class="hidden sm:inline">ส่งอีเมลหา</span>บัญชี
+                    </button>
+                    <button type="button" onclick="printSlip()" class="px-2.5 sm:px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1 shadow">
+                        <i class="fa-solid fa-print"></i> พิมพ์
                     </button>
                     <button type="button" onclick="closeSlipModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition">
                         <i class="fa-solid fa-xmark text-lg"></i>
@@ -568,13 +575,19 @@
 
             <!-- Modal Footer -->
             <div id="slip-modal-dialog-footer" class="p-3 sm:px-6 sm:py-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center shrink-0">
-                <p class="text-xs text-gray-500 hidden sm:block">💡 คำแนะนำ: เลือกปลายทางเป็น "Save as PDF" ในหน้าต่างพิมพ์ เพื่อบันทึกเป็นไฟล์ PDF ได้ทันที</p>
-                <div class="flex gap-2 ml-auto">
-                    <button type="button" onclick="closeSlipModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg text-xs sm:text-sm transition">
+                <p class="text-xs text-gray-500 hidden md:block">💡 คำแนะนำ: สามารถกดดาวน์โหลด PDF บันทึกเครื่อง หรือส่งอีเมลพร้อมข้อมูลสรุปหาฝ่ายบัญชีได้ทันที</p>
+                <div class="flex gap-2 ml-auto flex-wrap">
+                    <button type="button" onclick="closeSlipModal()" class="px-3.5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg text-xs sm:text-sm transition">
                         ปิด
                     </button>
-                    <button type="button" onclick="printSlip()" class="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg text-xs sm:text-sm transition flex items-center gap-1.5 shadow-sm">
-                        <i class="fa-solid fa-print"></i> สั่งพิมพ์ / บันทึก PDF
+                    <button type="button" onclick="openEmailModal()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-xs sm:text-sm transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-paper-plane"></i> ส่งอีเมลหาบัญชี
+                    </button>
+                    <button type="button" onclick="downloadSlipPDF()" id="btn-download-pdf-bottom" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-xs sm:text-sm transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-download"></i> ดาวน์โหลด PDF
+                    </button>
+                    <button type="button" onclick="printSlip()" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg text-xs sm:text-sm transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-print"></i> พิมพ์เอกสาร
                     </button>
                 </div>
             </div>
@@ -582,7 +595,57 @@
         </div>
     </div>
 
-    <script src="assets/js/utils.js"></script>
-    <script src="assets/js/app.js"></script>
+    <!-- Send Email Modal -->
+    <div id="email-modal" class="fixed inset-0 bg-slate-900 bg-opacity-60 z-[110] hidden items-center justify-center backdrop-blur-sm transition-opacity opacity-0 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col border border-gray-100">
+            <div class="p-4 sm:px-6 bg-slate-900 text-white flex justify-between items-center">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center text-white shadow">
+                        <i class="fa-solid fa-paper-plane text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold">ส่งอีเมลใบใช้รถและบิลแนบหาฝ่ายบัญชี</h3>
+                        <p class="text-xs text-slate-300">SIS Accounting Department</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeEmailModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+            
+            <div class="p-5 space-y-3.5 text-xs sm:text-sm">
+                <div>
+                    <label class="block font-semibold text-gray-700 mb-1">ส่งถึง (ฝ่ายบัญชี / แอดมิน):</label>
+                    <input type="text" id="email-recipients" readonly value="accsisint@gmail.com, Popeye.wipawan@gmail.com" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 outline-none font-mono text-xs">
+                </div>
+                <div>
+                    <label class="block font-semibold text-gray-700 mb-1">หัวข้ออีเมล (Subject):</label>
+                    <input type="text" id="email-subject" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-xs">
+                </div>
+                <div>
+                    <label class="block font-semibold text-gray-700 mb-1">เนื้อหาข้อความ (Body):</label>
+                    <textarea id="email-body" rows="8" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-sans leading-relaxed"></textarea>
+                </div>
+                <p class="text-[11px] text-gray-500"><i class="fa-solid fa-circle-info text-sky-500 mr-1"></i> สามารถกดเปิดหน้าเขียนเมลของ Gmail หรือ Outlook ได้ทันที ข้อมูลจะถูกกรอกให้อัตโนมัติ</p>
+            </div>
+
+            <div class="p-4 bg-gray-50 border-t border-gray-200 flex flex-wrap justify-between items-center gap-2">
+                <button type="button" onclick="copyEmailBody()" id="btn-copy-email" class="px-3 py-2 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-lg font-medium text-xs transition flex items-center gap-1.5">
+                    <i class="fa-regular fa-copy"></i> คัดลอกข้อความ
+                </button>
+                <div class="flex gap-2 ml-auto">
+                    <button type="button" onclick="sendViaGmail()" class="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-xs transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-brands fa-google"></i> เปิดใน Gmail
+                    </button>
+                    <button type="button" onclick="sendViaMailto()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-xs transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-envelope"></i> เปิดใน Outlook / แอปเมล
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/utils.js?v=202609170855"></script>
+    <script src="assets/js/app.js?v=202609170855"></script>
 </body>
 </html>

@@ -27,3 +27,4 @@
 - Added Approver/Rejector identity tracking modal and formatted remark output to Column N (`หมายเหตุ`) (2026-09-16 15:55).
 - Dedicated approval workflow to Telegram Bot only; removed manual approval triggers from Web App to prevent authorization bypass (2026-09-16 16:31).
 - Implemented Vehicle Usage Report & Expense Claim Slip (ใบขอใช้รถยนต์และบันทึกการเดินทาง) with `@media print` A4 layout, interactive fuel/receipt adjust toolbar, and accounting attachment section (2026-09-17 08:41).
+- Added 1-click Download PDF (`html2pdf.js`), Send Email to Accounting modal (Gmail Web & mailto), and made entire table rows clickable (2026-09-17 08:55).

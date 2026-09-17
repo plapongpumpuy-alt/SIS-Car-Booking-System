@@ -216,7 +216,13 @@ window.appState = {
             
             if (statusKey === 'pending') {
                 statusHtml = `<span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">รออนุมัติ</span>`;
-                actionHtml = `<span class="text-xs text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 inline-flex items-center gap-1.5 whitespace-nowrap"><i class="fa-brands fa-telegram text-sky-500"></i> รออนุมัติใน Telegram</span>`;
+                actionHtml = `
+                    <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                        <span class="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-full border border-amber-200 inline-flex items-center gap-1 whitespace-nowrap"><i class="fa-brands fa-telegram text-sky-500"></i> รออนุมัติ</span>
+                        <button onclick="event.stopPropagation(); window.openSlipModal(${rowIndex})" class="px-2 py-1 bg-gray-100 hover:bg-sky-50 hover:text-sky-700 text-gray-700 border border-gray-200 rounded text-xs font-medium transition whitespace-nowrap flex items-center gap-1" title="ดูตัวอย่างใบขอใช้รถ">
+                            <i class="fa-solid fa-file-lines"></i> ดูรายงาน
+                        </button>
+                    </div>`;
             } else if (statusKey === 'approved') {
                 statusHtml = `
                     <div class="flex flex-col gap-1 items-start">
@@ -225,8 +231,8 @@ window.appState = {
                     </div>`;
                 actionHtml = `
                     <div class="flex items-center justify-center gap-1.5 flex-wrap">
-                        <button onclick="window.openReturnModal('${plate}', '${mileageOut === '-' ? '' : mileageOut}', ${rowIndex})" class="px-2.5 py-1 bg-brand-50 text-brand-600 border border-brand-200 rounded text-xs font-medium hover:bg-brand-600 hover:text-white transition whitespace-nowrap"><i class="fa-solid fa-pen-to-square mr-1"></i>บันทึกคืนรถ</button>
-                        <button onclick="window.openSlipModal(${rowIndex})" class="px-2.5 py-1 bg-sky-50 text-sky-700 border border-sky-300 rounded text-xs font-medium hover:bg-sky-600 hover:text-white transition whitespace-nowrap shadow-sm"><i class="fa-solid fa-file-invoice-dollar mr-1"></i>ใบใช้รถ (PDF)</button>
+                        <button onclick="event.stopPropagation(); window.openReturnModal('${plate}', '${mileageOut === '-' ? '' : mileageOut}', ${rowIndex})" class="px-2.5 py-1.5 bg-brand-50 text-brand-600 border border-brand-200 rounded-lg text-xs font-medium hover:bg-brand-600 hover:text-white transition whitespace-nowrap"><i class="fa-solid fa-pen-to-square mr-1"></i>คืนรถ</button>
+                        <button onclick="event.stopPropagation(); window.openSlipModal(${rowIndex})" class="px-2.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold transition whitespace-nowrap shadow-sm flex items-center gap-1" title="เปิดดูใบขอใช้รถยนต์และเบิกค่าใช้จ่าย"><i class="fa-solid fa-file-invoice-dollar mr-1"></i>ใบใช้รถ (PDF)</button>
                     </div>`;
             } else if (statusKey === 'rejected') {
                 statusHtml = `
@@ -234,7 +240,12 @@ window.appState = {
                         <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">ปฏิเสธแล้ว</span>
                         ${remark && remark !== '-' ? `<span class="text-[11px] text-red-600 font-medium max-w-[170px] truncate" title="${remark}"><i class="fa-solid fa-ban text-[10px] mr-1 text-red-500"></i>${remark}</span>` : ''}
                     </div>`;
-                actionHtml = '-';
+                actionHtml = `
+                    <div class="flex items-center justify-center">
+                        <button onclick="event.stopPropagation(); window.openSlipModal(${rowIndex})" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200 rounded text-xs font-medium transition whitespace-nowrap flex items-center gap-1">
+                            <i class="fa-solid fa-file-lines"></i> ดูรายงาน
+                        </button>
+                    </div>`;
             } else {
                 statusHtml = `
                     <div class="flex flex-col gap-1 items-start">
@@ -243,7 +254,9 @@ window.appState = {
                     </div>`;
                 actionHtml = `
                     <div class="flex items-center justify-center gap-1.5">
-                        <button onclick="window.openSlipModal(${rowIndex})" class="px-2.5 py-1 bg-sky-50 text-sky-700 border border-sky-300 rounded text-xs font-medium hover:bg-sky-600 hover:text-white transition whitespace-nowrap shadow-sm"><i class="fa-solid fa-file-invoice-dollar mr-1"></i>ใบใช้รถ (PDF)</button>
+                        <button onclick="event.stopPropagation(); window.openSlipModal(${rowIndex})" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold transition whitespace-nowrap shadow-sm flex items-center gap-1.5" title="เปิดดูใบขอใช้รถยนต์และแนบบิลส่งบัญชี">
+                            <i class="fa-solid fa-file-invoice-dollar"></i> ดูใบรายงาน / PDF
+                        </button>
                     </div>`;
             }
 
@@ -251,7 +264,12 @@ window.appState = {
             if (fromDate !== toDate && toDate !== '-') dateDisplay += ` - ${formatDateShort(toDate)}`;
 
             const tr = document.createElement('tr');
-            tr.className = 'hover:bg-brand-50 transition border-b border-gray-50';
+            tr.className = 'hover:bg-sky-50 transition border-b border-gray-100 cursor-pointer group';
+            tr.title = 'คลิกที่แถวนี้เพื่อเปิดดูใบรายงาน / ใบขอใช้รถ (PDF)';
+            tr.onclick = (e) => {
+                if (e.target.closest('button') || e.target.closest('a')) return;
+                window.openSlipModal(rowIndex);
+            };
             tr.innerHTML = `
                 <td class="p-4 text-gray-800">${user}</td>
                 <td class="p-4 text-gray-800 font-semibold whitespace-nowrap"><span class="bg-gray-100 px-2 py-1 rounded border border-gray-200">${plate}</span></td>
@@ -685,6 +703,140 @@ window.updateSlipAccountingValues = function() {
 
 window.printSlip = function() {
     window.print();
+};
+
+window.downloadSlipPDF = function() {
+    const slipElement = document.getElementById('printable-slip');
+    if (!slipElement) return;
+
+    const btnTop = document.getElementById('btn-download-pdf-top');
+    const btnBottom = document.getElementById('btn-download-pdf-bottom');
+    const originalTopText = btnTop ? btnTop.innerHTML : '';
+    const originalBottomText = btnBottom ? btnBottom.innerHTML : '';
+
+    if (btnTop) btnTop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังสร้าง PDF...';
+    if (btnBottom) btnBottom.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังสร้าง PDF...';
+
+    const docNo = (document.getElementById('slip-doc-no')?.textContent || 'SIS-CAR').trim();
+    const carPlate = (document.getElementById('slip-car-plate')?.textContent || 'Car').trim();
+    const fileName = `ใบใช้รถ_${carPlate}_${docNo}.pdf`;
+
+    if (typeof html2pdf !== 'undefined') {
+        const opt = {
+            margin: [6, 8, 6, 8],
+            filename: fileName,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(slipElement).save().then(() => {
+            if (btnTop) btnTop.innerHTML = originalTopText;
+            if (btnBottom) btnBottom.innerHTML = originalBottomText;
+        }).catch(err => {
+            console.warn("html2pdf failed, falling back to print dialog:", err);
+            if (btnTop) btnTop.innerHTML = originalTopText;
+            if (btnBottom) btnBottom.innerHTML = originalBottomText;
+            window.print();
+        });
+    } else {
+        if (btnTop) btnTop.innerHTML = originalTopText;
+        if (btnBottom) btnBottom.innerHTML = originalBottomText;
+        window.print();
+    }
+};
+
+// --- Email Forwarding for Accounting Slip ---
+const emailModal = document.getElementById('email-modal');
+
+window.openEmailModal = function() {
+    if (!emailModal) return;
+
+    const docNo = document.getElementById('slip-doc-no')?.textContent || '-';
+    const userName = document.getElementById('slip-user-name')?.textContent || '-';
+    const userPos = document.getElementById('slip-user-position')?.textContent || '-';
+    const carPlate = document.getElementById('slip-car-plate')?.textContent || '-';
+    const carModel = document.getElementById('slip-car-model')?.textContent || '-';
+    const purpose = document.getElementById('slip-purpose')?.textContent || '-';
+    const dest = document.getElementById('slip-dest')?.textContent || '-';
+    const dates = document.getElementById('slip-dates')?.textContent || '-';
+    const days = document.getElementById('slip-days')?.textContent || '-';
+    const mOut = document.getElementById('slip-mileage-out')?.textContent || '-';
+    const mIn = document.getElementById('slip-mileage-in')?.textContent || '-';
+    const mTotal = document.getElementById('slip-mileage-total')?.textContent || '-';
+
+    const fuel = document.getElementById('slip-table-fuel')?.textContent || '0.00';
+    const fuelNote = document.getElementById('slip-table-fuel-note')?.textContent || '-';
+    const toll = document.getElementById('slip-table-toll')?.textContent || '0.00';
+    const tollNote = document.getElementById('slip-table-toll-note')?.textContent || '-';
+    const other = document.getElementById('slip-table-other')?.textContent || '0.00';
+    const total = document.getElementById('slip-table-total')?.textContent || '0.00';
+
+    const subject = `[ใบขอใช้รถยนต์และเบิกค่าใช้จ่าย] ทะเบียน ${carPlate} - ${userName} (${docNo})`;
+    const body = `เรียน ฝ่ายบัญชีและการเงิน,
+
+ขอนำส่งใบขอใช้รถยนต์และสรุปค่าใช้จ่ายในการเดินทาง (${docNo}) เพื่อดำเนินการเบิกจ่ายตามระเบียบบริษัทฯ รายละเอียดดังนี้:
+
+• ผู้ขอใช้รถ / ผู้ขับขี่: ${userName} (ตำแหน่ง: ${userPos})
+• ข้อมูลยานพาหนะ: ทะเบียน ${carPlate} (${carModel})
+• วัตถุประสงค์: ${purpose}
+• สถานที่ปลายทาง: ${dest}
+• กำหนดการเดินทาง: ${dates} (รวม ${days})
+• ระยะทางใช้งานจริง: ${mTotal} (ไมล์ออก: ${mOut} - ไมล์เข้า: ${mIn})
+
+สรุปรายการค่าใช้จ่ายที่ขอเบิกแนบบิล:
+1. ค่าน้ำมันเชื้อเพลิง: ${fuel} บาท (${fuelNote})
+2. ค่าทางด่วน / ผ่านทาง: ${toll} บาท (${tollNote})
+3. ค่าใช้จ่ายอื่นๆ: ${other} บาท
+---------------------------------------------
+รวมเป็นเงินที่ขอเบิกจ่ายทั้งสิ้น: ${total} บาท
+
+(หมายเหตุ: ได้แนบสลิป/ใบเสร็จรับเงินค่าน้ำมันและค่าทางด่วนฉบับจริง เพื่อส่งมอบให้ฝ่ายบัญชีเรียบร้อยแล้ว)
+
+ขอแสดงความนับถือ,
+${userName}`;
+
+    document.getElementById('email-subject').value = subject;
+    document.getElementById('email-body').value = body;
+
+    emailModal.classList.remove('hidden');
+    setTimeout(() => emailModal.classList.add('show', 'opacity-100'), 10);
+};
+
+window.closeEmailModal = function() {
+    if (!emailModal) return;
+    emailModal.classList.remove('show', 'opacity-100');
+    setTimeout(() => emailModal.classList.add('hidden'), 250);
+};
+
+window.sendViaGmail = function() {
+    const to = document.getElementById('email-recipients').value;
+    const su = document.getElementById('email-subject').value;
+    const body = document.getElementById('email-body').value;
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
+    window.open(gmailUrl, '_blank');
+};
+
+window.sendViaMailto = function() {
+    const to = document.getElementById('email-recipients').value;
+    const su = document.getElementById('email-subject').value;
+    const body = document.getElementById('email-body').value;
+    const mailtoUrl = `mailto:${to}?subject=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoUrl;
+};
+
+window.copyEmailBody = function() {
+    const body = document.getElementById('email-body').value;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(body).then(() => {
+            const btn = document.getElementById('btn-copy-email');
+            const og = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check text-green-600"></i> คัดลอกสำเร็จ!';
+            setTimeout(() => btn.innerHTML = og, 2000);
+        });
+    } else {
+        alert("กรุณาเลือกและคัดลอกข้อความในกล่องด้วยตนเองครับ");
+    }
 };
 
 // --- Initialization ---

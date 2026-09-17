@@ -1,12 +1,17 @@
 # SIS Car Booking System
-**Version:** v.2026.09.17.0841
-**Last Updated:** 2026-09-17 08:41:00+07:00
+**Version:** v.2026.09.17.0855
+**Last Updated:** 2026-09-17 08:55:00+07:00
 **Live Website (GitHub Pages):** [https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/](https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/)
 
 ## Overview
 Welcome to the SIS Car Booking System. This document serves as the main user manual and work log.
 
 ## Work Log / Changelog
+- **2026-09-17 08:55**: Enhanced Vehicle Usage Report with Direct PDF Download, Email Forwarding to Accounting, and Clickable Rows:
+  - Enabled clicking directly on any table row in Dashboard to open the report preview.
+  - Added 1-click **Download PDF** button using `html2pdf.js` with high-resolution A4 export.
+  - Added **Send Email to Accounting** modal with pre-filled Gmail Web & Outlook mailto integration.
+  - Added cache-busting query strings on script and style assets to prevent browser caching issues.
 - **2026-09-17 08:41**: Added Vehicle Usage Report & Expense Claim Slip (ใบขอใช้รถยนต์และบันทึกการเดินทาง) in official A4 PDF format. Features include:
   - Print/Save as PDF button on Dashboard for approved and completed trips.
   - Interactive preview modal with quick adjust toolbar for fuel expense (ค่าน้ำมัน) and receipt counts.
