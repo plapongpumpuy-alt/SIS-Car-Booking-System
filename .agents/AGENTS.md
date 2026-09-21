@@ -32,3 +32,7 @@
 - Configured default accounting submission recipient to `sisintegration005@gmail.com` and added CC field support for Gmail Web & mailto (2026-09-17 09:03).
 - Added official company corporate branding (SIS Integration Co.,Ltd. / บริษัท เอสไอเอส อินติเกรชั่น จำกัด (สำนักงานใหญ่), full registered address, Tax ID, phone numbers, and company logo) to the Vehicle Usage Report (2026-09-17 09:15).
 - Solved duplicate booking issue (2026-09-21 09:10): Implemented server-side collision validation in `Code.gs` for both booking creation and Telegram approval, added client-side `toBangkokYMD` timezone normalization, race-condition history-loading guard, optimistic cache updates, and double-submit button locks.
+- Implemented Vehicle Maintenance and Tax/Insurance Renewal Management Modules (2026-09-21 10:15):
+  - Added `tab-maint` and `tab-tax` views with responsive UI, KPI summary cards, filter/search controls, and modals.
+  - Added `DEFAULT_MAINTENANCE` and `DEFAULT_TAX_INSURANCE` fallback datasets and LocalStorage synchronization for 0ms loading.
+  - Extended Google Apps Script (`Code.gs`) with automatic sheet provisioning (`ประวัติซ่อมบำรุง` and `ประกันและภาษีรถ`), `create_maintenance`, `renew_tax_insurance`, automated Telegram notifications, and `checkExpiringNotifications()` expiration scanner.

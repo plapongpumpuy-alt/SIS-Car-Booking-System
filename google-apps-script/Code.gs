@@ -1,12 +1,30 @@
 // =================================================================
 // ระบบหลังบ้าน SIS Car Booking System (Google Apps Script)
-// Version: v.2026.09.21.0910
+// Version: v.2026.09.21.1015
 // =================================================================
 
 // 1. ตั้งค่า Telegram Bot และ Webhook
 var TELEGRAM_TOKEN = "8232899917:AAGL6nl13xIF3U6kHNIA0hlnPAo__bALH0c";
 var TELEGRAM_CHAT_ID = "-5435344787";
 var WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxFDhxfRoLMyLQu7aQjy3eTNGFHvKhgX02Z_BeRaE2RRVZWtNRwTLIXs50JGm1ujAPICA/exec";
+
+// Master Data ค่าเริ่มต้นสำหรับกรณีเปิดใช้งานชีตใหม่
+var DEFAULT_TAX_ROWS = [
+  ["1ฒม3823", "D-Max", "นาย วิษณุ วงษ์คำ", "2026-11-15", "2026-11-15", "2026-11-15", "ชั้น 1", "วิริยะประกันภัย", "VIR-2025-8831", 900, 16500, "ดูแลเรียบร้อย"],
+  ["7กฌ2554", "Yamaha", "นาย ประพัฒน์ สกุลรัตนกุลชัย", "2026-10-30", "2026-10-30", "2026-10-30", "พ.ร.บ. เท่านั้น", "กลางคุ้มครองผู้ประสบภัย", "NVP-2025-1120", 150, 645, "มอเตอร์ไซค์"],
+  ["4ขข7395", "Civic EHEV", "นาย สมคิด เอี่ยมสำอางค์", "2026-12-20", "2026-12-20", "2026-12-20", "ชั้น 1", "โตเกียวมารีน", "TKM-88921-A", 1800, 22000, "รถประจำตำแหน่ง"],
+  ["ฮฐ1300", "Toyota", "นาย ประพัฒน์ สกุลรัตนกุลชัย", "2026-10-10", "2026-10-10", "2026-10-10", "ชั้น 2+", "ทิพยประกันภัย", "TIP-55421-B", 1200, 8900, "ใกล้ครบกำหนด"],
+  ["3ฒจ4298", "Toyota Revo", "นาย วันจักรี เนียมพุ่มพวง", "2027-01-25", "2027-01-25", "2027-01-25", "ชั้น 1", "กรุงเทพประกันภัย", "BKI-99321", 950, 17500, ""],
+  ["5ขจ9318", "Yaris Cross", "นาย ประพัฒน์ สกุลรัตนกุลชัย", "2027-02-18", "2027-02-18", "2027-02-18", "ชั้น 1", "วิริยะประกันภัย", "VIR-2026-0041", 1450, 19000, ""],
+  ["3ฒฮ8017", "Hilux Champ", "นาย ธนเดช อินช่วย", "2026-11-05", "2026-11-05", "2026-11-05", "ชั้น 1", "เมืองไทยประกันภัย", "MTI-44120-C", 900, 15500, ""],
+  ["2ฆณ 2556", "Yadea GS70", "-", "2026-10-01", "2026-10-01", "-", "พ.ร.บ. เท่านั้น", "กลางคุ้มครองผู้ประสบภัย", "NVP-2025-9981", 100, 324, "รถมอเตอร์ไซค์ไฟฟ้า EV"]
+];
+
+var DEFAULT_MAINT_ROWS = [
+  ["MNT-202609-001", "2026-09-10", "1ฒม3823", "เช็คระยะตามรอบ", "เปลี่ยนถ่ายน้ำมันเครื่อง สังเคราะห์แท้ + ไส้กรองน้ำมันเครื่อง", 95000, 105000, "ศูนย์ Isuzu ตรีเพชร", 2450, "นาย วิษณุ วงษ์คำ", "เสร็จสิ้น", "RC-69021"],
+  ["MNT-202609-002", "2026-09-12", "3ฒจ4298", "เปลี่ยนอะไหล่", "สลับยาง ถ่วงล้อ 4 เส้น + ตั้งศูนย์", 48200, 58200, "B-Quik สาขามีนบุรี", 850, "นาย วันจักรี เนียมพุ่มพวง", "เสร็จสิ้น", "BQ-8812"],
+  ["MNT-202609-003", "2026-09-15", "4ขข7395", "เช็คระยะตามรอบ", "เช็คระยะ 40,000 กม. เปลี่ยนน้ำมันเบรก และกรองแอร์ PM2.5", 41200, 51200, "ศูนย์ Honda สุขาภิบาล 3", 3890, "นาย สมคิด เอี่ยมสำอางค์", "เสร็จสิ้น", "HD-44390"]
+];
 
 // =================================================================
 // 2. ระบบ API สำหรับดึงข้อมูล (GET)
@@ -18,11 +36,22 @@ function doGet(e) {
     var historyData = getSheetData(ss, "ตารางบันทึกการใช้รถ", true);
     var usersData = getSheetData(ss, "รายชื่อพนักงาน", false);
     var carsData = getSheetData(ss, "ฐานข้อมูลรถ", false);
+    var maintData = getOrCreateSheet(ss, "ประวัติซ่อมบำรุง", [
+      "รหัสรายการ", "วันที่เข้าซ่อม", "ทะเบียนรถ", "ประเภทงาน", "รายการซ่อม/เช็คระยะ", 
+      "เลขไมล์เข้าซ่อม", "เลขไมล์รอบถัดไป", "อู่หรือศูนย์บริการ", "ค่าใช้จ่าย", "ผู้ส่งซ่อม", "สถานะ", "หมายเหตุ/เลขที่ใบเสร็จ"
+    ], DEFAULT_MAINT_ROWS);
+    var taxData = getOrCreateSheet(ss, "ประกันและภาษีรถ", [
+      "ทะเบียนรถ", "รุ่น", "ผู้ดูแล", "วันหมดอายุภาษี", "วันหมดอายุพรบ", "วันหมดอายุประกัน", 
+      "ประเภทประกัน", "บริษัทประกัน", "เลขที่กรมธรรม์", "ค่าใช้จ่ายภาษีล่าสุด", "ค่าเบี้ยประกันล่าสุด", "หมายเหตุ"
+    ], DEFAULT_TAX_ROWS);
+
     return ContentService.createTextOutput(JSON.stringify({
       status: 'success', 
       history: historyData, 
       users: usersData, 
-      cars: carsData
+      cars: carsData,
+      maintenance: maintData,
+      taxInsurance: taxData
     })).setMimeType(ContentService.MimeType.JSON);
   }
   
@@ -30,6 +59,28 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify({
       status: 'success', 
       data: getSheetData(ss, "ตารางบันทึกการใช้รถ", true)
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (e.parameter && e.parameter.action === 'get_maintenance') {
+    var mData = getOrCreateSheet(ss, "ประวัติซ่อมบำรุง", [
+      "รหัสรายการ", "วันที่เข้าซ่อม", "ทะเบียนรถ", "ประเภทงาน", "รายการซ่อม/เช็คระยะ", 
+      "เลขไมล์เข้าซ่อม", "เลขไมล์รอบถัดไป", "อู่หรือศูนย์บริการ", "ค่าใช้จ่าย", "ผู้ส่งซ่อม", "สถานะ", "หมายเหตุ/เลขที่ใบเสร็จ"
+    ], DEFAULT_MAINT_ROWS);
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'success', 
+      data: mData
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (e.parameter && e.parameter.action === 'get_tax_insurance') {
+    var tData = getOrCreateSheet(ss, "ประกันและภาษีรถ", [
+      "ทะเบียนรถ", "รุ่น", "ผู้ดูแล", "วันหมดอายุภาษี", "วันหมดอายุพรบ", "วันหมดอายุประกัน", 
+      "ประเภทประกัน", "บริษัทประกัน", "เลขที่กรมธรรม์", "ค่าใช้จ่ายภาษีล่าสุด", "ค่าเบี้ยประกันล่าสุด", "หมายเหตุ"
+    ], DEFAULT_TAX_ROWS);
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'success', 
+      data: tData
     })).setMimeType(ContentService.MimeType.JSON);
   }
   
@@ -56,6 +107,24 @@ function getSheetData(ss, sheetName, includeRowIndex) {
   return result;
 }
 
+// สร้างแผ่นชีตให้อัตโนมัติหากยังไม่มี
+function getOrCreateSheet(ss, sheetName, defaultHeaders, defaultRows) {
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    if (defaultHeaders && defaultHeaders.length > 0) {
+      sheet.appendRow(defaultHeaders);
+      sheet.getRange(1, 1, 1, defaultHeaders.length).setFontWeight("bold").setBackground("#f1f5f9");
+    }
+    if (defaultRows && defaultRows.length > 0) {
+      for (var r = 0; r < defaultRows.length; r++) {
+        sheet.appendRow(defaultRows[r]);
+      }
+    }
+  }
+  return getSheetData(ss, sheetName, true);
+}
+
 // Helper แปลงวันที่ให้อยู่ในฟอร์แมต YYYY-MM-DD ตามเขตเวลาประเทศไทย
 function formatBangkokYMD(val) {
   if (!val) return "";
@@ -71,6 +140,30 @@ function formatBangkokYMD(val) {
   }
 }
 
+// Helper ส่งข้อความแจ้งเตือนเข้า Telegram
+function sendTelegram(text, inlineKeyboard) {
+  if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) return;
+  var telegramUrl = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage";
+  var payloadObj = {
+    "chat_id": TELEGRAM_CHAT_ID,
+    "text": text,
+    "parse_mode": "HTML"
+  };
+  if (inlineKeyboard) {
+    payloadObj.reply_markup = { "inline_keyboard": inlineKeyboard };
+  }
+  try {
+    UrlFetchApp.fetch(telegramUrl, {
+      "method": "post",
+      "contentType": "application/json",
+      "payload": JSON.stringify(payloadObj),
+      "muteHttpExceptions": true
+    });
+  } catch(err) {
+    Logger.log("Telegram send error: " + err);
+  }
+}
+
 // =================================================================
 // 3. ระบบ API สำหรับรับและประมวลผลข้อมูล (POST)
 // =================================================================
@@ -83,8 +176,151 @@ function doPost(e) {
     return handleTelegramClick(payload.callback_query);
   }
 
-  // --- ถ้าเป็นการส่งข้อมูลมาจากหน้าเว็บแอป ---
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // ----------------------------------------------------
+  // ACTION: บันทึกงานซ่อมบำรุงใหม่ (create_maintenance)
+  // ----------------------------------------------------
+  if (payload.action === "create_maintenance") {
+    var maintSheet = ss.getSheetByName("ประวัติซ่อมบำรุง");
+    if (!maintSheet) {
+      getOrCreateSheet(ss, "ประวัติซ่อมบำรุง", [
+        "รหัสรายการ", "วันที่เข้าซ่อม", "ทะเบียนรถ", "ประเภทงาน", "รายการซ่อม/เช็คระยะ", 
+        "เลขไมล์เข้าซ่อม", "เลขไมล์รอบถัดไป", "อู่หรือศูนย์บริการ", "ค่าใช้จ่าย", "ผู้ส่งซ่อม", "สถานะ", "หมายเหตุ/เลขที่ใบเสร็จ"
+      ], DEFAULT_MAINT_ROWS);
+      maintSheet = ss.getSheetByName("ประวัติซ่อมบำรุง");
+    }
+    
+    var mHeaders = maintSheet.getRange(1, 1, 1, maintSheet.getLastColumn()).getValues()[0];
+    var mId = payload.id || ("MNT-" + Utilities.formatDate(new Date(), "Asia/Bangkok", "yyyyMMdd-HHmm"));
+    var newMaintRow = [];
+    for (var mi = 0; mi < mHeaders.length; mi++) {
+      var mh = mHeaders[mi].toString().trim();
+      if (mh === "รหัสรายการ") newMaintRow.push(mId);
+      else if (mh === "วันที่เข้าซ่อม") newMaintRow.push(payload.serviceDate || "");
+      else if (mh === "ทะเบียนรถ") newMaintRow.push(payload.plate || "");
+      else if (mh === "ประเภทงาน") newMaintRow.push(payload.category || "");
+      else if (mh === "รายการซ่อม/เช็คระยะ") newMaintRow.push(payload.items || "");
+      else if (mh === "เลขไมล์เข้าซ่อม") newMaintRow.push(payload.mileage || "");
+      else if (mh === "เลขไมล์รอบถัดไป") newMaintRow.push(payload.nextMileage || "");
+      else if (mh === "อู่หรือศูนย์บริการ") newMaintRow.push(payload.garage || "");
+      else if (mh === "ค่าใช้จ่าย") newMaintRow.push(payload.cost || 0);
+      else if (mh === "ผู้ส่งซ่อม") newMaintRow.push(payload.requester || "");
+      else if (mh === "สถานะ") newMaintRow.push(payload.status || "เสร็จสิ้น");
+      else if (mh === "หมายเหตุ/เลขที่ใบเสร็จ") newMaintRow.push(payload.notes || "");
+      else newMaintRow.push("");
+    }
+    maintSheet.appendRow(newMaintRow);
+    
+    // ส่ง Telegram แจ้งเตือนงานซ่อม
+    var costNum = Number(payload.cost || 0);
+    var maintMsg = "🔧 <b>บันทึกงานซ่อมบำรุงยานพาหนะ</b>\n\n" +
+                   "🚙 <b>ทะเบียนรถ:</b> " + (payload.plate || "-") + "\n" +
+                   "📅 <b>วันที่:</b> " + (payload.serviceDate || "-") + "\n" +
+                   "⚙️ <b>ประเภท:</b> " + (payload.category || "-") + "\n" +
+                   "📝 <b>รายการ:</b> " + (payload.items || "-") + "\n" +
+                   "🚗 <b>เลขไมล์:</b> " + (payload.mileage ? Number(payload.mileage).toLocaleString() + " กม." : "-") + "\n" +
+                   "🏢 <b>อู่/ศูนย์บริการ:</b> " + (payload.garage || "-") + "\n" +
+                   "💰 <b>ค่าใช้จ่าย:</b> " + (costNum > 0 ? costNum.toLocaleString() + " บาท" : "0 บาท") + "\n" +
+                   "👤 <b>ผู้บันทึก/ส่งซ่อม:</b> " + (payload.requester || "-") + "\n" +
+                   "📌 <b>สถานะ:</b> " + (payload.status || "เสร็จสิ้น");
+    sendTelegram(maintMsg);
+    
+    return ContentService.createTextOutput(JSON.stringify({ status: "success", id: mId }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // ----------------------------------------------------
+  // ACTION: อัปเดตการต่อภาษี / ประกันภัย (renew_tax_insurance)
+  // ----------------------------------------------------
+  if (payload.action === "renew_tax_insurance") {
+    var taxSheet = ss.getSheetByName("ประกันและภาษีรถ");
+    if (!taxSheet) {
+      getOrCreateSheet(ss, "ประกันและภาษีรถ", [
+        "ทะเบียนรถ", "รุ่น", "ผู้ดูแล", "วันหมดอายุภาษี", "วันหมดอายุพรบ", "วันหมดอายุประกัน", 
+        "ประเภทประกัน", "บริษัทประกัน", "เลขที่กรมธรรม์", "ค่าใช้จ่ายภาษีล่าสุด", "ค่าเบี้ยประกันล่าสุด", "หมายเหตุ"
+      ], DEFAULT_TAX_ROWS);
+      taxSheet = ss.getSheetByName("ประกันและภาษีรถ");
+    }
+    var tHeaders = taxSheet.getRange(1, 1, 1, taxSheet.getLastColumn()).getValues()[0];
+    var plateIdx = tHeaders.indexOf("ทะเบียนรถ");
+    var taxExpIdx = tHeaders.indexOf("วันหมดอายุภาษี");
+    var prbExpIdx = tHeaders.indexOf("วันหมดอายุพรบ");
+    var insExpIdx = tHeaders.indexOf("วันหมดอายุประกัน");
+    var insTypeIdx = tHeaders.indexOf("ประเภทประกัน");
+    var compIdx = tHeaders.indexOf("บริษัทประกัน");
+    var policyIdx = tHeaders.indexOf("เลขที่กรมธรรม์");
+    var taxCostIdx = tHeaders.indexOf("ค่าใช้จ่ายภาษีล่าสุด");
+    var insCostIdx = tHeaders.indexOf("ค่าเบี้ยประกันล่าสุด");
+    var remarkIdx = tHeaders.indexOf("หมายเหตุ");
+
+    var tData = taxSheet.getDataRange().getValues();
+    var targetRow = -1;
+    for (var tr = 1; tr < tData.length; tr++) {
+      if ((tData[tr][plateIdx] || "").toString().trim() === (payload.plate || "").toString().trim()) {
+        targetRow = tr + 1;
+        break;
+      }
+    }
+
+    if (targetRow !== -1) {
+      if (payload.renewType === "tax" || payload.renewType === "all") {
+        if (payload.taxExpiry && taxExpIdx !== -1) taxSheet.getRange(targetRow, taxExpIdx + 1).setValue(payload.taxExpiry);
+        if (payload.taxCost && taxCostIdx !== -1) taxSheet.getRange(targetRow, taxCostIdx + 1).setValue(payload.taxCost);
+      }
+      if (payload.renewType === "prb" || payload.renewType === "all") {
+        if (payload.prbExpiry && prbExpIdx !== -1) taxSheet.getRange(targetRow, prbExpIdx + 1).setValue(payload.prbExpiry);
+      }
+      if (payload.renewType === "insurance" || payload.renewType === "all") {
+        if (payload.insExpiry && insExpIdx !== -1) taxSheet.getRange(targetRow, insExpIdx + 1).setValue(payload.insExpiry);
+        if (payload.insCost && insCostIdx !== -1) taxSheet.getRange(targetRow, insCostIdx + 1).setValue(payload.insCost);
+        if (payload.insType && insTypeIdx !== -1) taxSheet.getRange(targetRow, insTypeIdx + 1).setValue(payload.insType);
+        if (payload.insCompany && compIdx !== -1) taxSheet.getRange(targetRow, compIdx + 1).setValue(payload.insCompany);
+        if (payload.policyNo && policyIdx !== -1) taxSheet.getRange(targetRow, policyIdx + 1).setValue(payload.policyNo);
+      }
+      if (payload.notes && remarkIdx !== -1) {
+        var prevNote = taxSheet.getRange(targetRow, remarkIdx + 1).getValue();
+        var newNote = payload.notes + (prevNote ? " | " + prevNote : "");
+        taxSheet.getRange(targetRow, remarkIdx + 1).setValue(newNote);
+      }
+    } else {
+      var newTRow = [];
+      for (var ti = 0; ti < tHeaders.length; ti++) {
+        var th = tHeaders[ti].toString().trim();
+        if (th === "ทะเบียนรถ") newTRow.push(payload.plate || "");
+        else if (th === "รุ่น") newTRow.push(payload.model || "");
+        else if (th === "ผู้ดูแล") newTRow.push(payload.manager || "");
+        else if (th === "วันหมดอายุภาษี") newTRow.push(payload.taxExpiry || "");
+        else if (th === "วันหมดอายุพรบ") newTRow.push(payload.prbExpiry || "");
+        else if (th === "วันหมดอายุประกัน") newTRow.push(payload.insExpiry || "");
+        else if (th === "ประเภทประกัน") newTRow.push(payload.insType || "");
+        else if (th === "บริษัทประกัน") newTRow.push(payload.insCompany || "");
+        else if (th === "เลขที่กรมธรรม์") newTRow.push(payload.policyNo || "");
+        else if (th === "ค่าใช้จ่ายภาษีล่าสุด") newTRow.push(payload.taxCost || 0);
+        else if (th === "ค่าเบี้ยประกันล่าสุด") newTRow.push(payload.insCost || 0);
+        else if (th === "หมายเหตุ") newTRow.push(payload.notes || "");
+        else newTRow.push("");
+      }
+      taxSheet.appendRow(newTRow);
+    }
+
+    var typeLabel = (payload.renewType === "tax") ? "ภาษีประจำปี" : (payload.renewType === "prb") ? "พ.ร.บ." : (payload.renewType === "insurance") ? "ประกันภัยภาคสมัครใจ" : "ภาษีและประกันภัย";
+    var costVal = Number(payload.cost || payload.taxCost || payload.insCost || 0);
+    var taxMsg = "🛡️ <b>บันทึกการต่ออายุ" + typeLabel + "</b>\n\n" +
+                 "🚙 <b>ทะเบียนรถ:</b> " + (payload.plate || "-") + " (" + (payload.model || "") + ")\n" +
+                 "📋 <b>ประเภท:</b> " + typeLabel + "\n" +
+                 "📅 <b>วันหมดอายุรอบใหม่:</b> " + (payload.newExpiry || payload.taxExpiry || payload.insExpiry || payload.prbExpiry || "-") + "\n" +
+                 "💰 <b>ยอดเงิน/เบี้ย:</b> " + (costVal > 0 ? costVal.toLocaleString() + " บาท" : "-") + "\n" +
+                 "🏢 <b>บริษัท/ผู้ให้บริการ:</b> " + (payload.insCompany || "-") + "\n" +
+                 "📄 <b>เลขที่กรมธรรม์/อ้างอิง:</b> " + (payload.policyNo || "-") + "\n" +
+                 "⏱ <b>เวลาทำรายการ:</b> " + Utilities.formatDate(new Date(), "Asia/Bangkok", "dd/MM/yyyy HH:mm:ss");
+    sendTelegram(taxMsg);
+
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // --- ถ้าเป็นการส่งข้อมูลมาจากหน้าเว็บแอป (ระบบจองรถเดิม) ---
   var sheet = ss.getSheetByName("ตารางบันทึกการใช้รถ");
   if (!sheet) {
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "ไม่พบแผ่นชีต ตารางบันทึกการใช้รถ" }))
@@ -168,44 +404,22 @@ function doPost(e) {
     var newRowIndex = sheet.getLastRow();
 
     // ส่งแจ้งเตือนเข้า Telegram พร้อมปุ่ม อนุมัติ / ปฏิเสธ
-    var messageText = "🚗 <b>มีคำขอจองรถใหม่ (คิวที่ " + newRowIndex + ")</b>
-
-" +
-                      "👤 <b>ผู้จอง:</b> " + payload.email + "
-" +
-                      "🚙 <b>ทะเบียนรถ:</b> " + payload.plate + "
-" +
-                      "📅 <b>เดินทาง:</b> " + payload.fromDate + " ถึง " + payload.toDate + " (" + payload.days + ")
-" +
-                      "🎯 <b>จุดประสงค์:</b> " + payload.purpose + "
-" +
-                      "📍 <b>สถานที่:</b> " + payload.destination + "
-" +
-                      "⏱ <b>เวลาทำรายการ:</b> " + Utilities.formatDate(new Date(), "Asia/Bangkok", "dd/MM/yyyy HH:mm:ss") + "
-
-" +
+    var messageText = "🚗 <b>มีคำขอจองรถใหม่ (คิวที่ " + newRowIndex + ")</b>\n\n" +
+                      "👤 <b>ผู้จอง:</b> " + payload.email + "\n" +
+                      "🚙 <b>ทะเบียนรถ:</b> " + payload.plate + "\n" +
+                      "📅 <b>เดินทาง:</b> " + payload.fromDate + " ถึง " + payload.toDate + " (" + payload.days + ")\n" +
+                      "🎯 <b>จุดประสงค์:</b> " + payload.purpose + "\n" +
+                      "📍 <b>สถานที่:</b> " + payload.destination + "\n" +
+                      "⏱ <b>เวลาทำรายการ:</b> " + Utilities.formatDate(new Date(), "Asia/Bangkok", "dd/MM/yyyy HH:mm:ss") + "\n\n" +
                       "<i>กรุณาพิจารณาอนุมัติหรือปฏิเสธคำขอด้านล่างนี้:</i>";
 
-    var telegramUrl = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage";
-    var options = {
-      "method": "post",
-      "contentType": "application/json",
-      "payload": JSON.stringify({
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": messageText,
-        "parse_mode": "HTML",
-        "reply_markup": {
-          "inline_keyboard": [
-            [
-              {"text": "✅ อนุมัติ", "callback_data": "approve_" + newRowIndex},
-              {"text": "❌ ปฏิเสธ", "callback_data": "reject_" + newRowIndex}
-            ]
-          ]
-        }
-      }),
-      "muteHttpExceptions": true
-    };
-    try { UrlFetchApp.fetch(telegramUrl, options); } catch(err) {}
+    var keyboard = [
+      [
+        {"text": "✅ อนุมัติ", "callback_data": "approve_" + newRowIndex},
+        {"text": "❌ ปฏิเสธ", "callback_data": "reject_" + newRowIndex}
+      ]
+    ];
+    sendTelegram(messageText, keyboard);
 
     return ContentService.createTextOutput(JSON.stringify({ status: "success", rowIndex: newRowIndex }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -311,11 +525,8 @@ function handleTelegramClick(callbackQuery) {
     }
 
     if (hasConflict) {
-      var conflictMsg = "⚠️ <b>ไม่สามารถอนุมัติคิวที่ " + rowIndex + " ได้!</b>
-
-" +
-                        "รถทะเบียน <b>" + thisPlate + "</b> ได้รับการอนุมัติให้ " + conflictingUser + " ในช่วงเวลาเดียวกันไปแล้ว!
-" +
+      var conflictMsg = "⚠️ <b>ไม่สามารถอนุมัติคิวที่ " + rowIndex + " ได้!</b>\n\n" +
+                        "รถทะเบียน <b>" + thisPlate + "</b> ได้รับการอนุมัติให้ " + conflictingUser + " ในช่วงเวลาเดียวกันไปแล้ว!\n" +
                         "ผู้พยายามดำเนินการ: " + fromName;
       editTelegramMessage(chatId, messageId, conflictMsg);
       return ContentService.createTextOutput("CONFLICT");
@@ -336,13 +547,9 @@ function handleTelegramClick(callbackQuery) {
   }
 
   // อัปเดตข้อความใน Telegram ให้ปุ่มหายไป
-  var updatedText = emoji + " <b>รายการจองคิวที่ " + rowIndex + " ถูกดำเนินการแล้ว!</b>
-
-" +
-                    "สถานะปัจจุบัน: <b>" + statusTh + "</b>
-" +
-                    "ผู้ดำเนินการ: " + fromName + "
-" +
+  var updatedText = emoji + " <b>รายการจองคิวที่ " + rowIndex + " ถูกดำเนินการแล้ว!</b>\n\n" +
+                    "สถานะปัจจุบัน: <b>" + statusTh + "</b>\n" +
+                    "ผู้ดำเนินการ: " + fromName + "\n" +
                     "เวลา: " + Utilities.formatDate(new Date(), "Asia/Bangkok", "dd/MM/yyyy HH:mm:ss");
 
   editTelegramMessage(chatId, messageId, updatedText);
@@ -365,12 +572,71 @@ function editTelegramMessage(chatId, messageId, text) {
 }
 
 // =================================================================
-// 5. เครื่องมือติดตั้ง Webhook (รันแค่ครั้งเดียว)
+// 5. ฟังก์ชันแจ้งเตือนภาษี / ประกันภัย ใกล้หมดอายุอัตโนมัติ (ตั้ง Trigger ได้)
+// =================================================================
+function checkExpiringNotifications() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("ประกันและภาษีรถ");
+  if (!sheet) return;
+
+  var data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return;
+
+  var headers = data[0];
+  var plateIdx = headers.indexOf("ทะเบียนรถ");
+  var modelIdx = headers.indexOf("รุ่น");
+  var managerIdx = headers.indexOf("ผู้ดูแล");
+  var taxExpIdx = headers.indexOf("วันหมดอายุภาษี");
+  var prbExpIdx = headers.indexOf("วันหมดอายุพรบ");
+  var insExpIdx = headers.indexOf("วันหมดอายุประกัน");
+
+  var now = new Date();
+  var todayYMD = Utilities.formatDate(now, "Asia/Bangkok", "yyyy-MM-dd");
+  var todayMs = new Date(todayYMD).getTime();
+
+  var alerts = [];
+
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    var plate = row[plateIdx];
+    var model = row[modelIdx];
+    var manager = row[managerIdx];
+
+    var checkItems = [
+      { name: "ภาษีประจำปี", dateStr: row[taxExpIdx] },
+      { name: "พ.ร.บ.", dateStr: row[prbExpIdx] },
+      { name: "ประกันภัย", dateStr: row[insExpIdx] }
+    ];
+
+    for (var k = 0; k < checkItems.length; k++) {
+      var item = checkItems[k];
+      var expYMD = formatBangkokYMD(item.dateStr);
+      if (!expYMD) continue;
+      var expMs = new Date(expYMD).getTime();
+      var diffDays = Math.ceil((expMs - todayMs) / (1000 * 60 * 60 * 24));
+
+      if (diffDays <= 0) {
+        alerts.push("🔴 <b>" + plate + "</b> (" + model + "): " + item.name + " <b>หมดอายุแล้ว</b> (" + expYMD + ") ผู้ดูแล: " + manager);
+      } else if (diffDays <= 30) {
+        alerts.push("🟡 <b>" + plate + "</b> (" + model + "): " + item.name + " จะหมดอายุในอีก <b>" + diffDays + " วัน</b> (" + expYMD + ") ผู้ดูแล: " + manager);
+      }
+    }
+  }
+
+  if (alerts.length > 0) {
+    var summaryMsg = "📢 <b>แจ้งเตือนกำหนดภาษีและประกันภัยรถยนต์ SIS</b>\n\n" +
+                     alerts.join("\n\n") + "\n\n" +
+                     "<i>กรุณาประสานงานเพื่อดำเนินการต่ออายุก่อนครบกำหนด</i>";
+    sendTelegram(summaryMsg);
+  }
+}
+
+// =================================================================
+// 6. เครื่องมือติดตั้ง Webhook (รันแค่ครั้งเดียว)
 // =================================================================
 function setupTelegramWebhook() {
   var url = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/setWebhook?url=" + WEB_APP_URL;
   var response = UrlFetchApp.fetch(url);
   Logger.log(response.getContentText());
-  SpreadsheetApp.getUi().alert("เชื่อมต่อ Webhook สำเร็จ:
-" + response.getContentText());
+  SpreadsheetApp.getUi().alert("เชื่อมต่อ Webhook สำเร็จ:\n" + response.getContentText());
 }

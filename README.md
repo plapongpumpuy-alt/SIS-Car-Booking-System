@@ -1,12 +1,25 @@
 # SIS Car Booking System
-**Version:** v.2026.09.21.0910
-**Last Updated:** 2026-09-21 09:10:00+07:00
+**Version:** v.2026.09.21.1015
+**Last Updated:** 2026-09-21 10:15:00+07:00
 **Live Website (GitHub Pages):** [https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/](https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/)
 
 ## Overview
 Welcome to the SIS Car Booking System. This document serves as the main user manual and work log.
 
 ## Work Log / Changelog
+- **2026-09-21 10:15**: Added Vehicle Maintenance & Repair Management and Vehicle Tax & Insurance Renewal Modules:
+  - **Vehicle Maintenance Module (`tab-maint`)**:
+    - Summary KPI cards: Total maintenance records, Total maintenance costs (THB), and In-progress/Scheduled tasks.
+    - Comprehensive maintenance history log table with vehicle filtering, category filtering (regular service, oil changes, tire replacement, general/emergency repairs), and live search.
+    - Modal form for recording new maintenance entries with auto-generated ID (`MNT-YYYYMM-XXXX`), service date, mileage at service, recommended next service mileage, garage/service center, cost, responsible driver/technician, and receipt notes.
+    - Automatic Telegram notifications sent to fleet administrators when maintenance is logged.
+  - **Vehicle Tax & Insurance Tracking Module (`tab-tax`)**:
+    - Overview KPI cards categorizing vehicles: Expired (🔴), Expiring soon within 30 days (🟡), and Normal status (🟢).
+    - Status dashboard table tracking Road Tax (ป้ายภาษีประจำปี), Compulsory Insurance (พ.ร.บ.), and Voluntary Insurance (ชั้น 1 / 2+ / 3) for all company vehicles.
+    - Remaining days countdown and visual badges for each expiration item.
+    - 1-Click Renewal Modal: Supports renewing Road Tax, Compulsory Insurance, Voluntary Insurance, or All in one go with automatic +1 year date calculation, cost tracking, policy number, and insurer recording.
+    - Automatic Telegram alert summary on renewals and backend function `checkExpiringNotifications()` ready for daily/weekly automated expiration triggers.
+  - **Dual Persistence Architecture**: Full offline/instant cache (LocalStorage 0ms) paired with Google Sheets backend auto-creation (`ประวัติซ่อมบำรุง` and `ประกันและภาษีรถ`).
 - **2026-09-21 09:10**: Fixed duplicate booking issue across Frontend and Backend (Google Apps Script):
   - **Server-side Validation (`Code.gs`)**: Added strict overlap check on `action: "create"` in Google Apps Script. Rejects duplicate submissions with clear error message if the car is already booked/pending during the requested date range.
   - **Telegram Bot Conflict Prevention**: Added collision check in `handleTelegramClick` to prevent multiple approvals for the same vehicle and overlapping dates.

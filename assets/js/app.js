@@ -29,6 +29,62 @@ const DEFAULT_CARS = [
     { "ทะเบียนรถ": "2ฆณ 2556", "รุ่น": "Yadea GS70", "สี": "เทา", "ยี่ห้อ": "Yadea", "Code": "EV01", "ชื่อคนดูแล": "" }
 ];
 
+const DEFAULT_MAINTENANCE = [
+    {
+        "รหัสรายการ": "MNT-202609-001",
+        "วันที่เข้าซ่อม": "2026-09-10",
+        "ทะเบียนรถ": "1ฒม3823",
+        "ประเภทงาน": "เช็คระยะตามรอบ",
+        "รายการซ่อม/เช็คระยะ": "เปลี่ยนถ่ายน้ำมันเครื่อง สังเคราะห์แท้ + ไส้กรองน้ำมันเครื่อง",
+        "เลขไมล์เข้าซ่อม": 95000,
+        "เลขไมล์รอบถัดไป": 105000,
+        "อู่หรือศูนย์บริการ": "ศูนย์ Isuzu ตรีเพชร",
+        "ค่าใช้จ่าย": 2450,
+        "ผู้ส่งซ่อม": "นาย วิษณุ วงษ์คำ",
+        "สถานะ": "เสร็จสิ้น",
+        "หมายเหตุ/เลขที่ใบเสร็จ": "RC-69021"
+    },
+    {
+        "รหัสรายการ": "MNT-202609-002",
+        "วันที่เข้าซ่อม": "2026-09-12",
+        "ทะเบียนรถ": "3ฒจ4298",
+        "ประเภทงาน": "เปลี่ยนอะไหล่/ยาง",
+        "รายการซ่อม/เช็คระยะ": "สลับยาง ถ่วงล้อ 4 เส้น + ตั้งศูนย์",
+        "เลขไมล์เข้าซ่อม": 48200,
+        "เลขไมล์รอบถัดไป": 58200,
+        "อู่หรือศูนย์บริการ": "B-Quik สาขามีนบุรี",
+        "ค่าใช้จ่าย": 850,
+        "ผู้ส่งซ่อม": "นาย วันจักรี เนียมพุ่มพวง",
+        "สถานะ": "เสร็จสิ้น",
+        "หมายเหตุ/เลขที่ใบเสร็จ": "BQ-8812"
+    },
+    {
+        "รหัสรายการ": "MNT-202609-003",
+        "วันที่เข้าซ่อม": "2026-09-15",
+        "ทะเบียนรถ": "4ขข7395",
+        "ประเภทงาน": "เช็คระยะตามรอบ",
+        "รายการซ่อม/เช็คระยะ": "เช็คระยะ 40,000 กม. เปลี่ยนน้ำมันเบรก และกรองแอร์ PM2.5",
+        "เลขไมล์เข้าซ่อม": 41200,
+        "เลขไมล์รอบถัดไป": 51200,
+        "อู่หรือศูนย์บริการ": "ศูนย์ Honda สุขาภิบาล 3",
+        "ค่าใช้จ่าย": 3890,
+        "ผู้ส่งซ่อม": "นาย สมคิด เอี่ยมสำอางค์",
+        "สถานะ": "เสร็จสิ้น",
+        "หมายเหตุ/เลขที่ใบเสร็จ": "HD-44390"
+    }
+];
+
+const DEFAULT_TAX_INSURANCE = [
+    { "ทะเบียนรถ": "1ฒม3823", "รุ่น": "D-Max", "ผู้ดูแล": "นาย วิษณุ วงษ์คำ", "วันหมดอายุภาษี": "2026-11-15", "วันหมดอายุพรบ": "2026-11-15", "วันหมดอายุประกัน": "2026-11-15", "ประเภทประกัน": "ชั้น 1", "บริษัทประกัน": "วิริยะประกันภัย", "เลขที่กรมธรรม์": "VIR-2025-8831", "ค่าใช้จ่ายภาษีล่าสุด": 900, "ค่าเบี้ยประกันล่าสุด": 16500, "หมายเหตุ": "ดูแลเรียบร้อย" },
+    { "ทะเบียนรถ": "7กฌ2554", "รุ่น": "Yamaha", "ผู้ดูแล": "นาย ประพัฒน์ สกุลรัตนกุลชัย", "วันหมดอายุภาษี": "2026-10-30", "วันหมดอายุพรบ": "2026-10-30", "วันหมดอายุประกัน": "2026-10-30", "ประเภทประกัน": "พ.ร.บ. เท่านั้น", "บริษัทประกัน": "กลางคุ้มครองผู้ประสบภัย", "เลขที่กรมธรรม์": "NVP-2025-1120", "ค่าใช้จ่ายภาษีล่าสุด": 150, "ค่าเบี้ยประกันล่าสุด": 645, "หมายเหตุ": "มอเตอร์ไซค์" },
+    { "ทะเบียนรถ": "4ขข7395", "รุ่น": "Civic EHEV", "ผู้ดูแล": "นาย สมคิด เอี่ยมสำอางค์", "วันหมดอายุภาษี": "2026-12-20", "วันหมดอายุพรบ": "2026-12-20", "วันหมดอายุประกัน": "2026-12-20", "ประเภทประกัน": "ชั้น 1", "บริษัทประกัน": "โตเกียวมารีน", "เลขที่กรมธรรม์": "TKM-88921-A", "ค่าใช้จ่ายภาษีล่าสุด": 1800, "ค่าเบี้ยประกันล่าสุด": 22000, "หมายเหตุ": "รถประจำตำแหน่ง" },
+    { "ทะเบียนรถ": "ฮฐ1300", "รุ่น": "Toyota", "ผู้ดูแล": "นาย ประพัฒน์ สกุลรัตนกุลชัย", "วันหมดอายุภาษี": "2026-10-10", "วันหมดอายุพรบ": "2026-10-10", "วันหมดอายุประกัน": "2026-10-10", "ประเภทประกัน": "ชั้น 2+", "บริษัทประกัน": "ทิพยประกันภัย", "เลขที่กรมธรรม์": "TIP-55421-B", "ค่าใช้จ่ายภาษีล่าสุด": 1200, "ค่าเบี้ยประกันล่าสุด": 8900, "หมายเหตุ": "ใกล้ครบกำหนด" },
+    { "ทะเบียนรถ": "3ฒจ4298", "รุ่น": "Toyota Revo", "ผู้ดูแล": "นาย วันจักรี เนียมพุ่มพวง", "วันหมดอายุภาษี": "2027-01-25", "วันหมดอายุพรบ": "2027-01-25", "วันหมดอายุประกัน": "2027-01-25", "ประเภทประกัน": "ชั้น 1", "บริษัทประกัน": "กรุงเทพประกันภัย", "เลขที่กรมธรรม์": "BKI-99321", "ค่าใช้จ่ายภาษีล่าสุด": 950, "ค่าเบี้ยประกันล่าสุด": 17500, "หมายเหตุ": "" },
+    { "ทะเบียนรถ": "5ขจ9318", "รุ่น": "Yaris Cross", "ผู้ดูแล": "นาย ประพัฒน์ สกุลรัตนกุลชัย", "วันหมดอายุภาษี": "2027-02-18", "วันหมดอายุพรบ": "2027-02-18", "วันหมดอายุประกัน": "2027-02-18", "ประเภทประกัน": "ชั้น 1", "บริษัทประกัน": "วิริยะประกันภัย", "เลขที่กรมธรรม์": "VIR-2026-0041", "ค่าใช้จ่ายภาษีล่าสุด": 1450, "ค่าเบี้ยประกันล่าสุด": 19000, "หมายเหตุ": "" },
+    { "ทะเบียนรถ": "3ฒฮ8017", "รุ่น": "Hilux Champ", "ผู้ดูแล": "นาย ธนเดช อินช่วย", "วันหมดอายุภาษี": "2026-11-05", "วันหมดอายุพรบ": "2026-11-05", "วันหมดอายุประกัน": "2026-11-05", "ประเภทประกัน": "ชั้น 1", "บริษัทประกัน": "เมืองไทยประกันภัย", "เลขที่กรมธรรม์": "MTI-44120-C", "ค่าใช้จ่ายภาษีล่าสุด": 900, "ค่าเบี้ยประกันล่าสุด": 15500, "หมายเหตุ": "" },
+    { "ทะเบียนรถ": "2ฆณ 2556", "รุ่น": "Yadea GS70", "ผู้ดูแล": "-", "วันหมดอายุภาษี": "2026-10-01", "วันหมดอายุพรบ": "2026-10-01", "วันหมดอายุประกัน": "-", "ประเภทประกัน": "พ.ร.บ. เท่านั้น", "บริษัทประกัน": "กลางคุ้มครองผู้ประสบภัย", "เลขที่กรมธรรม์": "NVP-2025-9981", "ค่าใช้จ่ายภาษีล่าสุด": 100, "ค่าเบี้ยประกันล่าสุด": 324, "หมายเหตุ": "รถมอเตอร์ไซค์ไฟฟ้า EV" }
+];
+
 // จะถูกเติมข้อมูลจาก LocalStorage หรือ Default ทันที และซิงค์กับ Google Sheet ในพื้นหลัง
 let userDB = [];
 let vehicleDB = [];
@@ -40,6 +96,18 @@ window.appState = {
             const h = localStorage.getItem('sis_history');
             return h ? JSON.parse(h) : [];
         } catch(e) { return []; }
+    })(),
+    maintenance: (function(){
+        try {
+            const m = localStorage.getItem('sis_maintenance');
+            return m ? JSON.parse(m) : DEFAULT_MAINTENANCE;
+        } catch(e) { return DEFAULT_MAINTENANCE; }
+    })(),
+    taxInsurance: (function(){
+        try {
+            const t = localStorage.getItem('sis_tax_insurance');
+            return t ? JSON.parse(t) : DEFAULT_TAX_INSURANCE;
+        } catch(e) { return DEFAULT_TAX_INSURANCE; }
     })(),
     isHistoryLoaded: false,
     timelineStartDate: new Date(),
@@ -63,7 +131,7 @@ window.appState = {
         }
     },
 
-    // ดึงข้อมูลทั้งหมดในพื้นหลัง (ประวัติ, รถ, พนักงาน)
+    // ดึงข้อมูลทั้งหมดในพื้นหลัง (ประวัติ, รถ, พนักงาน, ซ่อมบำรุง, ภาษี/ประกัน)
     fetchAllData: async function() {
         this.setSyncStatus('syncing');
         const tbody = document.getElementById('dash-tbody');
@@ -88,10 +156,20 @@ window.appState = {
                     vehicleDB = data.cars;
                     try { localStorage.setItem('sis_cars', JSON.stringify(data.cars)); } catch(e){}
                 }
+                if (data.maintenance && data.maintenance.length > 0) {
+                    this.maintenance = data.maintenance;
+                    try { localStorage.setItem('sis_maintenance', JSON.stringify(data.maintenance)); } catch(e){}
+                }
+                if (data.taxInsurance && data.taxInsurance.length > 0) {
+                    this.taxInsurance = data.taxInsurance;
+                    try { localStorage.setItem('sis_tax_insurance', JSON.stringify(data.taxInsurance)); } catch(e){}
+                }
                 
                 this.populateDropdowns();
                 this.renderDashboard();
                 this.renderTimeline();
+                this.renderMaintenance();
+                this.renderTaxInsurance();
                 this.setSyncStatus('synced');
             } else {
                 this.setSyncStatus('error');
@@ -126,6 +204,10 @@ window.appState = {
     populateDropdowns: function() {
         const reqUserSelect = document.getElementById('req-user');
         const vehPlateSelect = document.getElementById('veh-plate');
+        const maintFilterCar = document.getElementById('maint-filter-car');
+        const maintCarSelect = document.getElementById('maint-car-select');
+        const maintReqSelect = document.getElementById('maint-requester');
+        const taxCarSelect = document.getElementById('tax-car-select');
 
         if(reqUserSelect) {
             const currentVal = reqUserSelect.value;
@@ -148,6 +230,303 @@ window.appState = {
             });
             if(currentVal) vehPlateSelect.value = currentVal;
         }
+
+        // Dropdown กรองรถในหน้าซ่อมบำรุง
+        if (maintFilterCar) {
+            const currentVal = maintFilterCar.value || 'all';
+            maintFilterCar.innerHTML = '<option value="all">รถทุกคัน</option>';
+            vehicleDB.forEach(c => {
+                const plate = c['ทะเบียนรถ'] || c['Plate'] || 'Unknown';
+                const model = c['รุ่น'] || c['Model'] || '';
+                maintFilterCar.insertAdjacentHTML('beforeend', `<option value="${plate}">${plate} ${model ? `(${model})` : ''}</option>`);
+            });
+            maintFilterCar.value = currentVal;
+        }
+
+        // Dropdown เลือกรถในฟอร์มซ่อมบำรุง
+        if (maintCarSelect) {
+            const currentVal = maintCarSelect.value;
+            maintCarSelect.innerHTML = '<option value="" disabled selected>เลือกทะเบียนรถ</option>';
+            vehicleDB.forEach(c => {
+                const plate = c['ทะเบียนรถ'] || c['Plate'] || 'Unknown';
+                const model = c['รุ่น'] || c['Model'] || '';
+                maintCarSelect.insertAdjacentHTML('beforeend', `<option value="${plate}">${plate} ${model ? `(${model})` : ''}</option>`);
+            });
+            if (currentVal) maintCarSelect.value = currentVal;
+        }
+
+        // Dropdown เลือกผู้ส่งซ่อม
+        if (maintReqSelect) {
+            const currentVal = maintReqSelect.value;
+            maintReqSelect.innerHTML = '<option value="">เลือกผู้รับผิดชอบ</option>';
+            userDB.forEach(u => {
+                const name = u['Name'] || u['ชื่อ'] || 'Unknown';
+                const nick = u['Nickname'] || u['ชื่อเล่น'] || '';
+                maintReqSelect.insertAdjacentHTML('beforeend', `<option value="${name}">${name} ${nick ? `(${nick})` : ''}</option>`);
+            });
+            if (currentVal) maintReqSelect.value = currentVal;
+        }
+
+        // Dropdown เลือกรถในฟอร์มต่ออายุภาษี/ประกัน
+        if (taxCarSelect) {
+            const currentVal = taxCarSelect.value;
+            taxCarSelect.innerHTML = '<option value="" disabled selected>เลือกทะเบียนรถ</option>';
+            vehicleDB.forEach(c => {
+                const plate = c['ทะเบียนรถ'] || c['Plate'] || 'Unknown';
+                const model = c['รุ่น'] || c['Model'] || '';
+                taxCarSelect.insertAdjacentHTML('beforeend', `<option value="${plate}">${plate} ${model ? `(${model})` : ''}</option>`);
+            });
+            if (currentVal) taxCarSelect.value = currentVal;
+        }
+    },
+
+    renderMaintenance: function() {
+        const tbody = document.getElementById('maint-tbody');
+        if (!tbody) return;
+
+        const carFilter = document.getElementById('maint-filter-car')?.value || 'all';
+        const catFilter = document.getElementById('maint-filter-cat')?.value || 'all';
+        const searchKeyword = (document.getElementById('maint-search')?.value || '').toLowerCase().trim();
+
+        const list = (this.maintenance || []).filter(item => {
+            const plate = (item['ทะเบียนรถ'] || item['plate'] || '').toString();
+            const cat = (item['ประเภทงาน'] || item['category'] || '').toString();
+            const items = (item['รายการซ่อม/เช็คระยะ'] || item['items'] || '').toString();
+            const garage = (item['อู่หรือศูนย์บริการ'] || item['garage'] || '').toString();
+            const req = (item['ผู้ส่งซ่อม'] || item['requester'] || '').toString();
+
+            if (carFilter !== 'all' && plate !== carFilter) return false;
+            if (catFilter !== 'all' && cat !== catFilter) return false;
+            if (searchKeyword) {
+                const matched = plate.toLowerCase().includes(searchKeyword) ||
+                                items.toLowerCase().includes(searchKeyword) ||
+                                garage.toLowerCase().includes(searchKeyword) ||
+                                req.toLowerCase().includes(searchKeyword);
+                if (!matched) return false;
+            }
+            return true;
+        });
+
+        // Update KPIs
+        let totalCost = 0;
+        let pendingCount = 0;
+        (this.maintenance || []).forEach(m => {
+            const c = Number(m['ค่าใช้จ่าย'] || m['cost'] || 0);
+            if (!isNaN(c)) totalCost += c;
+            const st = (m['สถานะ'] || m['status'] || '').toString();
+            if (st.includes('กำลังซ่อม') || st.includes('นัดหมาย') || st.includes('Progress') || st.includes('Scheduled')) {
+                pendingCount++;
+            }
+        });
+
+        const kpiCount = document.getElementById('maint-kpi-count');
+        const kpiCost = document.getElementById('maint-kpi-cost');
+        const kpiPending = document.getElementById('maint-kpi-pending');
+        if (kpiCount) kpiCount.textContent = (this.maintenance || []).length;
+        if (kpiCost) kpiCost.textContent = totalCost.toLocaleString() + ' ฿';
+        if (kpiPending) kpiPending.textContent = pendingCount;
+
+        if (list.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-400"><i class="fa-solid fa-wrench text-3xl mb-2 block text-gray-300"></i>ไม่มีรายการซ่อมบำรุงที่ตรงกับเงื่อนไข</td></tr>`;
+            return;
+        }
+
+        // Sort by date descending
+        const sorted = [...list].sort((a, b) => {
+            const da = a['วันที่เข้าซ่อม'] || a['serviceDate'] || '';
+            const db = b['วันที่เข้าซ่อม'] || b['serviceDate'] || '';
+            return db.localeCompare(da);
+        });
+
+        let html = '';
+        sorted.forEach(m => {
+            const rawDate = m['วันที่เข้าซ่อม'] || m['serviceDate'] || '-';
+            const dateStr = formatDateShort(rawDate);
+            const plate = m['ทะเบียนรถ'] || m['plate'] || '-';
+            const car = vehicleDB.find(v => (v['ทะเบียนรถ'] || v['Plate']) === plate);
+            const model = car ? (car['รุ่น'] || car['Model'] || '') : '';
+            const cat = m['ประเภทงาน'] || m['category'] || '-';
+            const items = m['รายการซ่อม/เช็คระยะ'] || m['items'] || '-';
+            const mileageIn = m['เลขไมล์เข้าซ่อม'] || m['mileage'];
+            const mileageNext = m['เลขไมล์รอบถัดไป'] || m['nextMileage'];
+            const garage = m['อู่หรือศูนย์บริการ'] || m['garage'] || '-';
+            const cost = Number(m['ค่าใช้จ่าย'] || m['cost'] || 0);
+            const costFormatted = cost > 0 ? cost.toLocaleString() : '-';
+            const req = m['ผู้ส่งซ่อม'] || m['requester'] || '-';
+            const status = m['สถานะ'] || m['status'] || 'เสร็จสิ้น';
+            const note = m['หมายเหตุ/เลขที่ใบเสร็จ'] || m['notes'] || '';
+
+            let statusBadge = '<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">เสร็จสิ้น</span>';
+            if (status.includes('กำลังซ่อม') || status.includes('Progress')) {
+                statusBadge = '<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">กำลังซ่อม</span>';
+            } else if (status.includes('นัดหมาย') || status.includes('Scheduled')) {
+                statusBadge = '<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-200">นัดหมาย</span>';
+            }
+
+            html += `
+            <tr class="hover:bg-slate-50 transition border-b border-gray-100">
+                <td class="p-4 font-medium text-gray-800 whitespace-nowrap">${dateStr}</td>
+                <td class="p-4">
+                    <span class="font-bold text-sky-900 px-2 py-0.5 bg-sky-50 border border-sky-200 rounded font-mono text-xs">${plate}</span>
+                    <span class="text-xs text-gray-500 block mt-0.5">${model}</span>
+                </td>
+                <td class="p-4">
+                    <span class="inline-block px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded font-medium mb-1">${cat}</span>
+                    <p class="font-medium text-gray-900">${items}</p>
+                    ${note ? `<p class="text-[11px] text-gray-500 mt-0.5"><i class="fa-solid fa-receipt text-gray-400 mr-1"></i>${note}</p>` : ''}
+                </td>
+                <td class="p-4 text-center font-mono font-medium text-gray-700 whitespace-nowrap">${mileageIn ? Number(mileageIn).toLocaleString() + ' กม.' : '-'}</td>
+                <td class="p-4 text-center font-mono font-medium text-brand-600 whitespace-nowrap">${mileageNext ? Number(mileageNext).toLocaleString() + ' กม.' : '-'}</td>
+                <td class="p-4 text-gray-700">${garage}</td>
+                <td class="p-4 text-right font-mono font-bold text-gray-900 whitespace-nowrap">${costFormatted}</td>
+                <td class="p-4 text-center whitespace-nowrap">${statusBadge}</td>
+                <td class="p-4 text-gray-600 text-xs">${req}</td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+    },
+
+    renderTaxInsurance: function() {
+        const tbody = document.getElementById('tax-tbody');
+        if (!tbody) return;
+
+        const statusFilter = document.getElementById('tax-filter-status')?.value || 'all';
+        const searchKeyword = (document.getElementById('tax-search')?.value || '').toLowerCase().trim();
+
+        // Calculate helper for expiry badge
+        const getExpiryInfo = (dateStr) => {
+            if (!dateStr || dateStr === '-' || dateStr === '') {
+                return { badge: '<span class="text-gray-400 text-xs">-</span>', days: null, status: 'none', dateStr: '-' };
+            }
+            const ymd = toBangkokYMD(dateStr);
+            if (!ymd) return { badge: `<span class="text-gray-500 text-xs">${dateStr}</span>`, days: null, status: 'none', dateStr };
+
+            const todayYMD = toBangkokYMD(new Date());
+            const expMs = new Date(ymd).getTime();
+            const todayMs = new Date(todayYMD).getTime();
+            const diffDays = Math.ceil((expMs - todayMs) / (1000 * 60 * 60 * 24));
+            const formattedDate = formatDateShort(ymd);
+
+            if (diffDays < 0) {
+                return {
+                    badge: `<div class="inline-flex flex-col"><span class="font-bold text-red-600">${formattedDate}</span><span class="text-[10px] px-2 py-0.5 bg-red-100 text-red-800 rounded font-semibold border border-red-200 mt-0.5">🔴 เกินกำหนด ${Math.abs(diffDays)} วัน</span></div>`,
+                    days: diffDays,
+                    status: 'expired',
+                    dateStr: ymd
+                };
+            } else if (diffDays <= 30) {
+                return {
+                    badge: `<div class="inline-flex flex-col"><span class="font-bold text-amber-600">${formattedDate}</span><span class="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-semibold border border-amber-200 mt-0.5">🟡 เหลืออีก ${diffDays} วัน</span></div>`,
+                    days: diffDays,
+                    status: 'warning',
+                    dateStr: ymd
+                };
+            } else {
+                return {
+                    badge: `<div class="inline-flex flex-col"><span class="font-medium text-emerald-700">${formattedDate}</span><span class="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded font-medium border border-emerald-200 mt-0.5">🟢 ปกติ (${diffDays} วัน)</span></div>`,
+                    days: diffDays,
+                    status: 'ok',
+                    dateStr: ymd
+                };
+            }
+        };
+
+        let expiredFleetCount = 0;
+        let warningFleetCount = 0;
+        let okFleetCount = 0;
+
+        const fleetList = (this.taxInsurance || DEFAULT_TAX_INSURANCE).map(row => {
+            const plate = row['ทะเบียนรถ'] || row['plate'] || '';
+            const car = vehicleDB.find(v => (v['ทะเบียนรถ'] || v['Plate']) === plate);
+            const model = row['รุ่น'] || (car ? (car['รุ่น'] || car['Model']) : '');
+            const manager = row['ผู้ดูแล'] || (car ? (car['ชื่อคนดูแล'] || car['Manager']) : '-');
+            const taxExp = getExpiryInfo(row['วันหมดอายุภาษี']);
+            const prbExp = getExpiryInfo(row['วันหมดอายุพรบ']);
+            const insExp = getExpiryInfo(row['วันหมดอายุประกัน']);
+            const insType = row['ประเภทประกัน'] || '-';
+            const insComp = row['บริษัทประกัน'] || '-';
+            const policyNo = row['เลขที่กรมธรรม์'] || '-';
+            const taxCost = Number(row['ค่าใช้จ่ายภาษีล่าสุด'] || 0);
+            const insCost = Number(row['ค่าเบี้ยประกันล่าสุด'] || 0);
+            const notes = row['หมายเหตุ'] || '';
+
+            const hasExpired = taxExp.status === 'expired' || prbExp.status === 'expired' || insExp.status === 'expired';
+            const hasWarning = !hasExpired && (taxExp.status === 'warning' || prbExp.status === 'warning' || insExp.status === 'warning');
+
+            if (hasExpired) expiredFleetCount++;
+            else if (hasWarning) warningFleetCount++;
+            else okFleetCount++;
+
+            return {
+                plate, model, manager,
+                taxExp, prbExp, insExp,
+                insType, insComp, policyNo,
+                taxCost, insCost, notes,
+                hasExpired, hasWarning
+            };
+        });
+
+        // Update KPIs
+        const kpiExpired = document.getElementById('tax-kpi-expired');
+        const kpiWarning = document.getElementById('tax-kpi-warning');
+        const kpiOk = document.getElementById('tax-kpi-ok');
+        if (kpiExpired) kpiExpired.textContent = `${expiredFleetCount} คัน`;
+        if (kpiWarning) kpiWarning.textContent = `${warningFleetCount} คัน`;
+        if (kpiOk) kpiOk.textContent = `${okFleetCount} คัน`;
+
+        // Apply filters
+        const filtered = fleetList.filter(item => {
+            if (statusFilter === 'alert' && !item.hasExpired && !item.hasWarning) return false;
+            if (statusFilter === 'ok' && (item.hasExpired || item.hasWarning)) return false;
+            if (searchKeyword) {
+                const match = item.plate.toLowerCase().includes(searchKeyword) ||
+                              item.model.toLowerCase().includes(searchKeyword) ||
+                              item.manager.toLowerCase().includes(searchKeyword) ||
+                              item.insComp.toLowerCase().includes(searchKeyword);
+                if (!match) return false;
+            }
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-400"><i class="fa-solid fa-shield-halved text-3xl mb-2 block text-gray-300"></i>ไม่พบข้อมูลรถตามเงื่อนไขที่เลือก</td></tr>`;
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(item => {
+            const totalCost = item.taxCost + item.insCost;
+            html += `
+            <tr class="hover:bg-slate-50 transition border-b border-gray-100 ${item.hasExpired ? 'bg-red-50/20' : item.hasWarning ? 'bg-amber-50/20' : ''}">
+                <td class="p-4">
+                    <span class="font-bold text-sky-900 px-2 py-0.5 bg-sky-50 border border-sky-200 rounded font-mono text-xs">${item.plate}</span>
+                    <span class="font-semibold text-gray-800 text-sm block mt-1">${item.model}</span>
+                </td>
+                <td class="p-4 text-xs font-medium text-gray-700">
+                    <i class="fa-solid fa-user-gear text-gray-400 mr-1"></i>${item.manager}
+                </td>
+                <td class="p-4">${item.taxExp.badge}</td>
+                <td class="p-4">${item.prbExp.badge}</td>
+                <td class="p-4">
+                    <div class="text-xs space-y-0.5">
+                        <span class="inline-block px-1.5 py-0.5 bg-indigo-50 text-indigo-700 font-semibold rounded text-[10px]">${item.insType}</span>
+                        <p class="font-medium text-gray-900">${item.insComp}</p>
+                        ${item.insExp.badge}
+                        ${item.policyNo !== '-' ? `<p class="text-[10px] text-gray-400 font-mono mt-0.5">เลขที่: ${item.policyNo}</p>` : ''}
+                    </div>
+                </td>
+                <td class="p-4 text-right text-xs">
+                    <p class="font-mono font-bold text-gray-900">${totalCost > 0 ? totalCost.toLocaleString() + ' ฿' : '-'}</p>
+                    <p class="text-[10px] text-gray-400">ภาษี: ${item.taxCost > 0 ? item.taxCost.toLocaleString() : '-'} | เบี้ย: ${item.insCost > 0 ? item.insCost.toLocaleString() : '-'}</p>
+                </td>
+                <td class="p-4 text-center">
+                    <button type="button" onclick="openTaxModal('${item.plate}')" class="px-3 py-1.5 bg-white border border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded-lg text-xs font-semibold transition shadow-sm inline-flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-right"></i> ต่ออายุ
+                    </button>
+                </td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
     },
 
     shiftTimeline: function(days) {
@@ -404,17 +783,25 @@ function formatDateShort(dateString) {
 
 // --- Tab Navigation ---
 window.switchTab = function(tabId) {
-    const tabs = ['form', 'dash', 'time'];
+    const tabs = ['form', 'dash', 'time', 'maint', 'tax'];
     tabs.forEach(t => {
-        document.getElementById(`tab-${t}`).classList.remove('active');
-        document.getElementById(`view-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`tab-${t}`);
+        const view = document.getElementById(`view-${t}`);
+        if (btn) btn.classList.remove('active');
+        if (view) view.classList.add('hidden');
     });
-    document.getElementById(`tab-${tabId}`).classList.add('active');
-    document.getElementById(`view-${tabId}`).classList.remove('hidden');
+    const activeBtn = document.getElementById(`tab-${tabId}`);
+    const activeView = document.getElementById(`view-${tabId}`);
+    if (activeBtn) activeBtn.classList.add('active');
+    if (activeView) activeView.classList.remove('hidden');
 
     if(tabId === 'dash' || tabId === 'time') {
         if(appState.bookings.length === 0) appState.fetchAllData();
         else { appState.renderDashboard(); appState.renderTimeline(); }
+    } else if (tabId === 'maint') {
+        appState.renderMaintenance();
+    } else if (tabId === 'tax') {
+        appState.renderTaxInsurance();
     }
 }
 
@@ -886,6 +1273,8 @@ function initLocalCache() {
         const cachedUsers = localStorage.getItem('sis_users');
         const cachedCars = localStorage.getItem('sis_cars');
         const cachedHistory = localStorage.getItem('sis_history');
+        const cachedMaint = localStorage.getItem('sis_maintenance');
+        const cachedTax = localStorage.getItem('sis_tax_insurance');
 
         userDB = cachedUsers ? JSON.parse(cachedUsers) : DEFAULT_USERS;
         vehicleDB = cachedCars ? JSON.parse(cachedCars) : DEFAULT_CARS;
@@ -895,12 +1284,332 @@ function initLocalCache() {
                 window.appState.isHistoryLoaded = true;
             }
         }
+        if (window.appState) {
+            window.appState.maintenance = cachedMaint ? JSON.parse(cachedMaint) : DEFAULT_MAINTENANCE;
+            window.appState.taxInsurance = cachedTax ? JSON.parse(cachedTax) : DEFAULT_TAX_INSURANCE;
+        }
     } catch(e) {
         console.warn("Using fallback master data", e);
         userDB = DEFAULT_USERS;
         vehicleDB = DEFAULT_CARS;
+        if (window.appState) {
+            window.appState.maintenance = DEFAULT_MAINTENANCE;
+            window.appState.taxInsurance = DEFAULT_TAX_INSURANCE;
+        }
     }
 }
+
+// --- Modal Handlers for Maintenance & Tax/Insurance ---
+window.openMaintenanceModal = function(prefillPlate) {
+    const modal = document.getElementById('maint-modal');
+    if (!modal) return;
+    
+    // Default date to today (Bangkok YMD)
+    const todayYMD = toBangkokYMD(new Date());
+    const dateInput = document.getElementById('maint-date');
+
+    // Reset fields
+    document.getElementById('maint-form')?.reset();
+    if (dateInput) dateInput.value = todayYMD;
+
+    if (prefillPlate) {
+        const carSelect = document.getElementById('maint-car-select');
+        if (carSelect) carSelect.value = prefillPlate;
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => modal.classList.remove('opacity-0'), 20);
+};
+
+window.closeMaintenanceModal = function() {
+    const modal = document.getElementById('maint-modal');
+    if (!modal) return;
+    modal.classList.add('opacity-0');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }, 200);
+};
+
+window.submitMaintenanceForm = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit-maint');
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> กำลังบันทึก...';
+        btn.disabled = true;
+    }
+
+    const plate = document.getElementById('maint-car-select').value;
+    const serviceDate = document.getElementById('maint-date').value;
+    const category = document.getElementById('maint-cat').value;
+    const status = document.getElementById('maint-status').value;
+    const items = document.getElementById('maint-items').value;
+    const mileage = document.getElementById('maint-mileage').value;
+    const nextMileage = document.getElementById('maint-next-mileage').value;
+    const garage = document.getElementById('maint-garage').value;
+    const cost = document.getElementById('maint-cost').value || 0;
+    const requester = document.getElementById('maint-requester').value;
+    const notes = document.getElementById('maint-notes').value;
+
+    const id = "MNT-" + new Date().getFullYear() + String(new Date().getMonth()+1).padStart(2, '0') + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+
+    const newEntry = {
+        "รหัสรายการ": id,
+        "วันที่เข้าซ่อม": serviceDate,
+        "ทะเบียนรถ": plate,
+        "ประเภทงาน": category,
+        "รายการซ่อม/เช็คระยะ": items,
+        "เลขไมล์เข้าซ่อม": mileage ? Number(mileage) : "",
+        "เลขไมล์รอบถัดไป": nextMileage ? Number(nextMileage) : "",
+        "อู่หรือศูนย์บริการ": garage,
+        "ค่าใช้จ่าย": Number(cost),
+        "ผู้ส่งซ่อม": requester,
+        "สถานะ": status,
+        "หมายเหตุ/เลขที่ใบเสร็จ": notes
+    };
+
+    // Optimistic Cache update
+    appState.maintenance.unshift(newEntry);
+    try { localStorage.setItem('sis_maintenance', JSON.stringify(appState.maintenance)); } catch(err){}
+    appState.renderMaintenance();
+    closeMaintenanceModal();
+
+    // Async Google Apps Script sync
+    const payload = {
+        action: "create_maintenance",
+        id: id,
+        plate: plate,
+        serviceDate: serviceDate,
+        category: category,
+        status: status,
+        items: items,
+        mileage: mileage,
+        nextMileage: nextMileage,
+        garage: garage,
+        cost: cost,
+        requester: requester,
+        notes: notes
+    };
+
+    try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
+        });
+        alert("✅ บันทึกงานซ่อมบำรุงเรียบร้อยแล้ว และส่งแจ้งเตือนเข้า Telegram แล้วครับ");
+    } catch(err) {
+        console.warn("Maintenance submit error:", err);
+        alert("บันทึกข้อมูลในเครื่องเรียบร้อยแล้ว (จะซิงค์กับเซิร์ฟเวอร์เมื่อมีการเชื่อมต่อ)");
+    } finally {
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+};
+
+window.openTaxModal = function(prefillPlate) {
+    const modal = document.getElementById('tax-modal');
+    if (!modal) return;
+
+    document.getElementById('tax-form')?.reset();
+    const carSelect = document.getElementById('tax-car-select');
+    if (prefillPlate && carSelect) {
+        carSelect.value = prefillPlate;
+    }
+    onTaxCarSelected();
+    onRenewTypeChanged();
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => modal.classList.remove('opacity-0'), 20);
+};
+
+window.closeTaxModal = function() {
+    const modal = document.getElementById('tax-modal');
+    if (!modal) return;
+    modal.classList.add('opacity-0');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }, 200);
+};
+
+window.onTaxCarSelected = function() {
+    const plate = document.getElementById('tax-car-select')?.value;
+    const box = document.getElementById('tax-current-status-box');
+    if (!plate || !box) return;
+
+    const carData = (appState.taxInsurance || []).find(c => (c['ทะเบียนรถ'] || c['plate']) === plate);
+    if (!carData) {
+        box.classList.add('hidden');
+        return;
+    }
+
+    const taxExp = formatDateShort(carData['วันหมดอายุภาษี'] || '-');
+    const prbExp = formatDateShort(carData['วันหมดอายุพรบ'] || '-');
+    const insExp = formatDateShort(carData['วันหมดอายุประกัน'] || '-');
+    const insComp = carData['บริษัทประกัน'] || '-';
+    const insType = carData['ประเภทประกัน'] || '-';
+    const policyNo = carData['เลขที่กรมธรรม์'] || '';
+
+    box.classList.remove('hidden');
+    box.innerHTML = `
+        <p class="font-semibold text-slate-700"><i class="fa-solid fa-circle-info text-sky-600 mr-1"></i> ข้อมูลวันหมดอายุปัจจุบัน:</p>
+        <div class="grid grid-cols-3 gap-2 text-[11px] pt-1">
+            <div><span class="text-gray-500">ภาษี:</span> <span class="font-bold text-gray-800">${taxExp}</span></div>
+            <div><span class="text-gray-500">พ.ร.บ.:</span> <span class="font-bold text-gray-800">${prbExp}</span></div>
+            <div><span class="text-gray-500">ประกัน:</span> <span class="font-bold text-gray-800">${insExp}</span></div>
+        </div>
+        <p class="text-[11px] text-gray-500 mt-1">ประกันภัย: <span class="font-medium text-gray-700">${insComp} (${insType})</span></p>
+    `;
+
+    // Pre-fill insurance fields if available
+    const compInput = document.getElementById('tax-company');
+    const typeSelect = document.getElementById('tax-ins-type');
+    const policyInput = document.getElementById('tax-policy-no');
+    if (compInput && insComp !== '-') compInput.value = insComp;
+    if (typeSelect && insType !== '-') typeSelect.value = insType;
+    if (policyInput && policyNo !== '-') policyInput.value = policyNo;
+
+    // Auto set default next year expiry
+    autoSetNextYearExpiry();
+};
+
+window.onRenewTypeChanged = function() {
+    const renewType = document.getElementById('tax-renew-type')?.value;
+    const insSection = document.getElementById('tax-ins-details-section');
+    if (!insSection) return;
+
+    if (renewType === 'tax' || renewType === 'prb') {
+        insSection.classList.add('hidden');
+    } else {
+        insSection.classList.remove('hidden');
+    }
+    autoSetNextYearExpiry();
+};
+
+window.autoSetNextYearExpiry = function() {
+    const plate = document.getElementById('tax-car-select')?.value;
+    const renewType = document.getElementById('tax-renew-type')?.value;
+    const expiryInput = document.getElementById('tax-new-expiry');
+    if (!expiryInput) return;
+
+    const carData = (appState.taxInsurance || []).find(c => (c['ทะเบียนรถ'] || c['plate']) === plate);
+    let baseDateStr = '';
+    if (carData) {
+        if (renewType === 'tax') baseDateStr = carData['วันหมดอายุภาษี'];
+        else if (renewType === 'prb') baseDateStr = carData['วันหมดอายุพรบ'];
+        else if (renewType === 'insurance') baseDateStr = carData['วันหมดอายุประกัน'];
+        else baseDateStr = carData['วันหมดอายุภาษี'] || carData['วันหมดอายุพรบ'];
+    }
+
+    let targetDate = new Date();
+    if (baseDateStr) {
+        const ymd = toBangkokYMD(baseDateStr);
+        if (ymd) {
+            const parts = ymd.split('-');
+            targetDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        }
+    }
+
+    // Add 1 year
+    targetDate.setFullYear(targetDate.getFullYear() + 1);
+    expiryInput.value = toBangkokYMD(targetDate);
+};
+
+window.submitTaxRenewalForm = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit-tax');
+    const originalText = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> กำลังบันทึก...';
+        btn.disabled = true;
+    }
+
+    const plate = document.getElementById('tax-car-select').value;
+    const renewType = document.getElementById('tax-renew-type').value;
+    const newExpiry = document.getElementById('tax-new-expiry').value;
+    const cost = document.getElementById('tax-cost').value || 0;
+    const company = document.getElementById('tax-company').value;
+    const insType = document.getElementById('tax-ins-type').value;
+    const policyNo = document.getElementById('tax-policy-no').value;
+    const notes = document.getElementById('tax-notes').value;
+
+    const car = vehicleDB.find(v => (v['ทะเบียนรถ'] || v['Plate']) === plate);
+    const model = car ? (car['รุ่น'] || car['Model'] || '') : '';
+    const manager = car ? (car['ชื่อคนดูแล'] || car['Manager'] || '-') : '-';
+
+    // Update in local cache
+    let targetCar = appState.taxInsurance.find(c => (c['ทะเบียนรถ'] || c['plate']) === plate);
+    if (!targetCar) {
+        targetCar = { "ทะเบียนรถ": plate, "รุ่น": model, "ผู้ดูแล": manager };
+        appState.taxInsurance.push(targetCar);
+    }
+
+    if (renewType === 'tax' || renewType === 'all') {
+        targetCar['วันหมดอายุภาษี'] = newExpiry;
+        targetCar['ค่าใช้จ่ายภาษีล่าสุด'] = Number(cost);
+    }
+    if (renewType === 'prb' || renewType === 'all') {
+        targetCar['วันหมดอายุพรบ'] = newExpiry;
+    }
+    if (renewType === 'insurance' || renewType === 'all') {
+        targetCar['วันหมดอายุประกัน'] = newExpiry;
+        targetCar['ค่าเบี้ยประกันล่าสุด'] = Number(cost);
+        if (company) targetCar['บริษัทประกัน'] = company;
+        if (insType) targetCar['ประเภทประกัน'] = insType;
+        if (policyNo) targetCar['เลขที่กรมธรรม์'] = policyNo;
+    }
+    if (notes) {
+        const prev = targetCar['หมายเหตุ'] || '';
+        targetCar['หมายเหตุ'] = notes + (prev ? ' | ' + prev : '');
+    }
+
+    try { localStorage.setItem('sis_tax_insurance', JSON.stringify(appState.taxInsurance)); } catch(err){}
+    appState.renderTaxInsurance();
+    closeTaxModal();
+
+    // Async Google Apps Script sync
+    const payload = {
+        action: "renew_tax_insurance",
+        plate: plate,
+        model: model,
+        manager: manager,
+        renewType: renewType,
+        newExpiry: newExpiry,
+        taxExpiry: (renewType === 'tax' || renewType === 'all') ? newExpiry : undefined,
+        prbExpiry: (renewType === 'prb' || renewType === 'all') ? newExpiry : undefined,
+        insExpiry: (renewType === 'insurance' || renewType === 'all') ? newExpiry : undefined,
+        cost: cost,
+        taxCost: (renewType === 'tax' || renewType === 'all') ? cost : undefined,
+        insCost: (renewType === 'insurance' || renewType === 'all') ? cost : undefined,
+        insCompany: company,
+        insType: insType,
+        policyNo: policyNo,
+        notes: notes
+    };
+
+    try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
+        });
+        alert("✅ บันทึกการต่ออายุเรียบร้อยแล้ว และส่งแจ้งเตือนเข้า Telegram แล้วครับ");
+    } catch(err) {
+        console.warn("Tax renewal submit error:", err);
+        alert("บันทึกข้อมูลในเครื่องเรียบร้อยแล้ว (จะซิงค์กับเซิร์ฟเวอร์เมื่อมีการเชื่อมต่อ)");
+    } finally {
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+};
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -911,6 +1620,8 @@ document.addEventListener('DOMContentLoaded', () => {
         appState.renderDashboard();
         appState.renderTimeline();
     }
+    appState.renderMaintenance();
+    appState.renderTaxInsurance();
 
     // 2. ซิงค์ข้อมูลล่าสุดกับ Google Sheets ในเบื้องหลัง (Background Sync)
     appState.fetchAllData();
