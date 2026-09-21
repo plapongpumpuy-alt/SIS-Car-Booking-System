@@ -1,12 +1,29 @@
 # SIS Car Booking System
-**Version:** v.2026.09.21.1015
-**Last Updated:** 2026-09-21 10:15:00+07:00
+**Version:** v.2026.09.21.1045
+**Last Updated:** 2026-09-21 10:45:00+07:00
 **Live Website (GitHub Pages):** [https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/](https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/)
 
 ## Overview
 Welcome to the SIS Car Booking System. This document serves as the main user manual and work log.
 
 ## Work Log / Changelog
+- **2026-09-21 10:45**: Added Daily Fleet Summary & Telegram Reporting Widget (`สรุปการใช้รถรายวัน`):
+  - **Dashboard Summary Widget (`#view-dash`)**:
+    - Embedded an interactive daily summary panel with quick date navigation (`< วันก่อนหน้า | วันที่ | วันถัดไป > | วันนี้`).
+    - 4 real-time KPI status cards for the selected day: รถที่อยู่ระหว่างปฏิบัติงาน / มีคิววิ่ง (Amber), รถที่คืนแล้วในวัน (Emerald), รถว่างพร้อมใช้งาน (Sky), and ระยะทางรวมที่วิ่ง (Slate, calculated from odometer difference).
+  - **Detailed Modal Report (`#daily-summary-modal`)**:
+    - Displays detailed breakdown of active trips (license plate, car model, driver, destination, mission purpose, approval status).
+    - Includes 1-click Return Car shortcut directly from the summary list.
+    - Displays returned vehicles with recorded trip distances and direct link to Vehicle Usage PDF slips.
+    - Lists all currently available fleet vehicles with caretaker details.
+  - **1-Click Copy & Telegram Dispatch**:
+    - "คัดลอกข้อความสรุป" button copies formatted, clean text summary to clipboard for easy sharing in LINE/email.
+    - "ส่งเข้า Telegram" button triggers direct Telegram broadcast to the company fleet group via backend Google Apps Script (`action: "send_daily_summary"`).
+- **2026-09-21 10:40**: Added Direct Return Car from Timeline/Calendar view (`tab-time`):
+  - **Interactive Booking Bars**: Click directly on any booking bar in the 7-day vehicle calendar to open the Return Car modal (`modal-return-form`) with pre-filled vehicle plate, initial mileage, and row index.
+  - **Visual Action Indicators**: Added a distinctive `[↩ คืนรถ]` badge and dynamic tooltip on pending/approved bars, and `[✔ คืนแล้ว]` for completed trips (clicking completed trips opens the Vehicle Usage Slip & PDF report).
+  - **Optimistic State Updates**: Submitting return from either the calendar or dashboard instantly updates both views without waiting for backend roundtrip latency.
+  - **User Guidance**: Added a helpful notification banner below the timeline informing users they can click directly to return cars.
 - **2026-09-21 10:15**: Added Vehicle Maintenance & Repair Management and Vehicle Tax & Insurance Renewal Modules:
   - **Vehicle Maintenance Module (`tab-maint`)**:
     - Summary KPI cards: Total maintenance records, Total maintenance costs (THB), and In-progress/Scheduled tasks.

@@ -320,6 +320,19 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  // ----------------------------------------------------
+  // ACTION: ส่งรายงานสรุปการใช้รถประจำวันเข้า Telegram (send_daily_summary)
+  // ----------------------------------------------------
+  if (payload.action === "send_daily_summary") {
+    if (payload.message) {
+      sendTelegram(payload.message);
+      return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "ไม่มีข้อความระบุมา" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   // --- ถ้าเป็นการส่งข้อมูลมาจากหน้าเว็บแอป (ระบบจองรถเดิม) ---
   var sheet = ss.getSheetByName("ตารางบันทึกการใช้รถ");
   if (!sheet) {

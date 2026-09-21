@@ -111,6 +111,7 @@ window.appState = {
     })(),
     isHistoryLoaded: false,
     timelineStartDate: new Date(),
+    dailySummaryDate: null,
     currentPayload: null,
     
     setSyncStatus: function(state) {
@@ -170,6 +171,7 @@ window.appState = {
                 this.renderTimeline();
                 this.renderMaintenance();
                 this.renderTaxInsurance();
+                this.renderDailySummary();
                 this.setSyncStatus('synced');
             } else {
                 this.setSyncStatus('error');
@@ -192,6 +194,7 @@ window.appState = {
                 try { localStorage.setItem('sis_history', JSON.stringify(data.data)); } catch(e){}
                 this.renderDashboard();
                 this.renderTimeline();
+                this.renderDailySummary();
                 this.setSyncStatus('synced');
             }
         } catch (error) {
@@ -529,6 +532,104 @@ window.appState = {
         tbody.innerHTML = html;
     },
 
+    getDailySummaryData: function(targetDateStr) {
+        const dateStr = targetDateStr || this.dailySummaryDate || toBangkokYMD(new Date());
+        const allCars = (vehicleDB && vehicleDB.length > 0) ? [...vehicleDB] : [...DEFAULT_CARS];
+        const activeBookings = [];
+        const inUseList = [];
+        const returnedList = [];
+        let totalMileage = 0;
+
+        (this.bookings || []).forEach(b => {
+            const statusRaw = (getVal(b, ['status', 'สถานะ']) || '').toString().toLowerCase();
+            if (statusRaw.includes('reject') || statusRaw.includes('ปฏิเสธ')) return;
+
+            const fromRaw = getVal(b, ['fromdate', 'จากวันที่', 'วันที่เดินทาง']);
+            const toRaw = getVal(b, ['todate', 'ถึงวันที่', 'วันสิ้นสุด']);
+            if (!fromRaw || fromRaw === '-') return;
+
+            const startYMD = toBangkokYMD(fromRaw);
+            const endYMD = (!toRaw || toRaw === '-') ? startYMD : (toBangkokYMD(toRaw) || startYMD);
+
+            if (dateStr >= startYMD && dateStr <= endYMD) {
+                const plate = (getVal(b, ['plate', 'ทะเบียนรถที่จอง', 'ทะเบียนรถ', 'ทะเบียน']) || '').trim();
+                const user = getVal(b, ['email', 'คนจอง(Gmail)', 'คนจอง', 'ชื่อผู้จอง', 'ผู้จอง', 'ชื่อ']) || '-';
+                const purpose = getVal(b, ['purpose', 'ไปทำอะไร', 'จุดประสงค์']) || '-';
+                const dest = getVal(b, ['destination', 'ไปที่ไหน', 'สถานที่']) || '-';
+                const mIn = parseFloat(getVal(b, ['mileagein', 'เลขไมล์เข้า', 'ไมล์เข้า'])) || 0;
+                const mOut = parseFloat(getVal(b, ['mileageout', 'เลขไมล์ออก', 'ไมล์ออก'])) || 0;
+                const mileageDiff = (mIn > mOut && mOut > 0) ? (mIn - mOut) : 0;
+                const isReturned = statusRaw.includes('complete') || statusRaw.includes('คืนรถ');
+
+                const carInfo = allCars.find(c => (c['ทะเบียนรถ'] || c['Plate'] || '').trim() === plate);
+                const carModel = carInfo ? (carInfo['รุ่น'] || carInfo['Model'] || '') : '';
+
+                const bookingItem = {
+                    plate,
+                    carModel,
+                    user,
+                    purpose,
+                    dest,
+                    status: statusRaw,
+                    isReturned,
+                    mileageDiff,
+                    mIn,
+                    mOut,
+                    rowIndex: b._rowIndex,
+                    raw: b
+                };
+
+                activeBookings.push(bookingItem);
+
+                if (isReturned) {
+                    returnedList.push(bookingItem);
+                    totalMileage += mileageDiff;
+                } else {
+                    inUseList.push(bookingItem);
+                }
+            }
+        });
+
+        const inUsePlates = new Set(inUseList.map(i => i.plate));
+        const availableCars = allCars.filter(c => {
+            const p = (c['ทะเบียนรถ'] || c['Plate'] || '').trim();
+            return p && !inUsePlates.has(p);
+        });
+
+        return {
+            dateStr,
+            activeBookings,
+            inUseList,
+            returnedList,
+            availableCars,
+            totalMileage
+        };
+    },
+
+    renderDailySummary: function(targetDateStr) {
+        if (!targetDateStr) {
+            targetDateStr = this.dailySummaryDate || toBangkokYMD(new Date());
+        }
+        this.dailySummaryDate = targetDateStr;
+
+        const dateInput = document.getElementById('daily-summary-date');
+        if (dateInput && dateInput.value !== targetDateStr) {
+            dateInput.value = targetDateStr;
+        }
+
+        const data = this.getDailySummaryData(targetDateStr);
+
+        const kpiInUse = document.getElementById('daily-kpi-inuse');
+        const kpiReturned = document.getElementById('daily-kpi-returned');
+        const kpiAvailable = document.getElementById('daily-kpi-available');
+        const kpiMileage = document.getElementById('daily-kpi-mileage');
+
+        if (kpiInUse) kpiInUse.textContent = `${data.inUseList.length} คัน`;
+        if (kpiReturned) kpiReturned.textContent = `${data.returnedList.length} คัน`;
+        if (kpiAvailable) kpiAvailable.textContent = `${data.availableCars.length} คัน`;
+        if (kpiMileage) kpiMileage.textContent = `${data.totalMileage.toLocaleString()} กม.`;
+    },
+
     shiftTimeline: function(days) {
         this.timelineStartDate.setDate(this.timelineStartDate.getDate() + days);
         this.renderTimeline();
@@ -654,6 +755,7 @@ window.appState = {
         if (visibleCount === 0) {
             tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-500">ไม่พบรายการที่ตรงกับเงื่อนไข</td></tr>`;
         }
+        this.renderDailySummary();
     },
 
     renderTimeline: function() {
@@ -732,9 +834,12 @@ window.appState = {
 
                 let user = getVal(b, ['email', 'คนจอง', 'ชื่อผู้จอง']);
                 let dest = getVal(b, ['destination', 'ไปที่ไหน']);
+                let mileageOut = getVal(b, ['mileageout', 'ไมล์ออก', 'เลขไมล์ออก']);
+                let isCompleted = status.includes('complete') || status.includes('คืนรถ');
+                let rowIndex = b._rowIndex;
 
                 let bar = document.createElement('div');
-                bar.className = `timeline-bar ${statusClass} cursor-pointer hover:opacity-90 transition`;
+                bar.className = `timeline-bar ${statusClass} cursor-pointer hover:shadow-md hover:brightness-95 transition group select-none`;
                 bar.style.gridColumn = `${gridColStart} / span ${span}`;
                 bar.style.gridRow = `${gridRow}`;
                 bar.style.left = '4px';
@@ -743,8 +848,32 @@ window.appState = {
                 bar.style.marginTop = '10px';
                 bar.style.zIndex = '10'; // Ensure it sits above the cells
                 
-                bar.title = `${user}\nไป: ${dest}`;
-                bar.innerHTML = `<span class="font-bold truncate">${user.split('@')[0]}</span><span class="text-[10px] truncate opacity-80">${dest}</span>`;
+                const titleAction = isCompleted ? 'คลิกเพื่อดูใบใช้รถ (PDF)' : 'คลิกเพื่อบันทึกคืนรถ';
+                bar.title = `${user}\nจุดประสงค์/สถานที่: ${dest}\n(${titleAction})`;
+
+                const actionBadge = !isCompleted 
+                    ? `<span class="ml-1 px-1.5 py-0.5 bg-white/30 hover:bg-white text-white hover:text-slate-900 rounded text-[9px] font-bold shrink-0 transition flex items-center gap-0.5 shadow-sm" title="กดคืนรถ"><i class="fa-solid fa-rotate-left"></i> คืนรถ</span>` 
+                    : `<span class="ml-1 px-1.5 py-0.5 bg-white/20 text-white rounded text-[9px] font-medium shrink-0 flex items-center gap-0.5"><i class="fa-solid fa-check"></i> คืนแล้ว</span>`;
+
+                bar.innerHTML = `
+                    <div class="flex items-center justify-between w-full overflow-hidden leading-tight">
+                        <span class="font-bold truncate">${user.split('@')[0]}</span>
+                        ${actionBadge}
+                    </div>
+                    <span class="text-[10px] truncate opacity-90 block leading-tight mt-0.5">${dest}</span>
+                `;
+
+                bar.onclick = function(e) {
+                    e.stopPropagation();
+                    if (isCompleted) {
+                        if (window.openSlipModal && rowIndex) {
+                            window.openSlipModal(rowIndex);
+                        }
+                    } else {
+                        const mOut = (mileageOut === '-' || !mileageOut) ? '' : mileageOut;
+                        window.openReturnModal(carPlate, mOut, rowIndex);
+                    }
+                };
                 
                 container.appendChild(bar);
             });
@@ -891,6 +1020,36 @@ if (returnForm) {
                 tollFee: document.getElementById('modal-toll-fee').value || "",
                 tollBalance: document.getElementById('modal-toll-balance').value || ""
             };
+
+            // อัปเดตข้อมูลบนหน้าจอทันที (Optimistic Cache) ทั้งในตารางและปฏิทิน
+            let targetBooking = null;
+            if (rIndex) {
+                targetBooking = appState.bookings.find(b => b._rowIndex === parseInt(rIndex));
+            }
+            if (!targetBooking && payload.searchPlate) {
+                targetBooking = appState.bookings.find(b => {
+                    const p = getVal(b, ['plate', 'ทะเบียนรถ', 'ทะเบียน']);
+                    const st = getVal(b, ['status', 'สถานะ']).toLowerCase();
+                    return p === payload.searchPlate && !st.includes('complete');
+                });
+            }
+
+            if (targetBooking) {
+                const keys = Object.keys(targetBooking);
+                const statusKey = keys.find(k => k.toLowerCase().includes('สถานะ')) || 'สถานะ';
+                const mailInKey = keys.find(k => k.toLowerCase().includes('ไมล์เข้า')) || 'เลขไมล์เข้า';
+                const mailOutKey = keys.find(k => k.toLowerCase().includes('ไมล์ออก')) || 'เลขไมล์ออก';
+                const tollKey = keys.find(k => k.toLowerCase().includes('ค่าทางด่วน')) || 'ค่าทางด่วน';
+                const tollBalKey = keys.find(k => k.toLowerCase().includes('บัตรทางด่วนคงเหลือ')) || 'บัตรทางด่วนคงเหลือ';
+                targetBooking[statusKey] = 'completed';
+                if (payload.mileageIn) targetBooking[mailInKey] = payload.mileageIn;
+                if (payload.mileageOut) targetBooking[mailOutKey] = payload.mileageOut;
+                if (payload.tollFee) targetBooking[tollKey] = payload.tollFee;
+                if (payload.tollBalance) targetBooking[tollBalKey] = payload.tollBalance;
+                try { localStorage.setItem('sis_history', JSON.stringify(appState.bookings)); } catch(e){}
+                appState.renderDashboard();
+                appState.renderTimeline();
+            }
 
             fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
@@ -1622,6 +1781,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     appState.renderMaintenance();
     appState.renderTaxInsurance();
+    appState.renderDailySummary(toBangkokYMD(new Date()));
 
     // 2. ซิงค์ข้อมูลล่าสุดกับ Google Sheets ในเบื้องหลัง (Background Sync)
     appState.fetchAllData();
@@ -1882,3 +2042,327 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+
+// --- Daily Summary Widget & Modal Actions ---
+window.shiftDailySummary = function(days) {
+    let cur = window.appState.dailySummaryDate ? new Date(window.appState.dailySummaryDate + 'T00:00:00') : new Date();
+    cur.setDate(cur.getDate() + days);
+    const nextYMD = toBangkokYMD(cur);
+    window.appState.renderDailySummary(nextYMD);
+};
+
+window.resetDailySummaryToday = function() {
+    const todayYMD = toBangkokYMD(new Date());
+    window.appState.renderDailySummary(todayYMD);
+};
+
+window.onDailyDateChanged = function() {
+    const dateVal = document.getElementById('daily-summary-date')?.value;
+    if (dateVal) {
+        window.appState.renderDailySummary(dateVal);
+    }
+};
+
+window.generateDailySummaryText = function(isHtml) {
+    const data = window.appState.getDailySummaryData(window.appState.dailySummaryDate);
+    let dateTitle = data.dateStr;
+    try {
+        const parts = data.dateStr.split('-');
+        const dt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        dateTitle = dt.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    } catch(e){}
+
+    if (isHtml) {
+        const inUseLines = data.inUseList.length > 0 
+            ? data.inUseList.map(item => {
+                const u = item.user.includes('@') ? item.user.split('@')[0] : item.user;
+                return `• <b>${item.plate}</b>: ${u} - ${item.dest} (${item.purpose})`;
+              }).join('\n')
+            : '• ไม่มีรถที่กำลังปฏิบัติงาน';
+
+        const retLines = data.returnedList.length > 0
+            ? data.returnedList.map(item => {
+                const u = item.user.includes('@') ? item.user.split('@')[0] : item.user;
+                const distText = item.mileageDiff > 0 ? ` (วิ่ง ${item.mileageDiff.toLocaleString()} กม.)` : '';
+                return `• <b>${item.plate}</b>: ${u}${distText}`;
+              }).join('\n')
+            : '• ยังไม่มีรถคืน';
+
+        const availLines = data.availableCars.length > 0
+            ? data.availableCars.map(c => `• <b>${c['ทะเบียนรถ'] || c['Plate']}</b> (${c['รุ่น'] || c['Model'] || '-'})`).join('\n')
+            : '• ไม่มีรถว่าง';
+
+        return `📊 <b>สรุปการใช้รถ SIS ประจำวันที่ ${dateTitle}</b>\n` +
+               `---------------------------------\n` +
+               `🚗 <b>รถที่อยู่ระหว่างปฏิบัติงาน (${data.inUseList.length} คัน):</b>\n${inUseLines}\n\n` +
+               `✅ <b>รถที่คืนแล้วในวัน (${data.returnedList.length} คัน):</b>\n${retLines}\n\n` +
+               `🅿️ <b>รถว่างพร้อมใช้งาน (${data.availableCars.length} คัน):</b>\n${availLines}\n\n` +
+               `📈 <b>สรุปรวม:</b>\n` +
+               `- คำขอใช้งานทั้งสิ้น: ${data.activeBookings.length} รายการ\n` +
+               `- ระยะทางที่วิ่งรวมวันนี้: ${data.totalMileage.toLocaleString()} กม.`;
+    } else {
+        const inUseLines = data.inUseList.length > 0 
+            ? data.inUseList.map(item => {
+                const u = item.user.includes('@') ? item.user.split('@')[0] : item.user;
+                return `• ${item.plate}: ${u} - ${item.dest} (${item.purpose})`;
+              }).join('\n')
+            : '• ไม่มีรถที่กำลังปฏิบัติงาน';
+
+        const retLines = data.returnedList.length > 0
+            ? data.returnedList.map(item => {
+                const u = item.user.includes('@') ? item.user.split('@')[0] : item.user;
+                const distText = item.mileageDiff > 0 ? ` (วิ่ง ${item.mileageDiff.toLocaleString()} กม.)` : '';
+                return `• ${item.plate}: ${u}${distText}`;
+              }).join('\n')
+            : '• ยังไม่มีรถคืน';
+
+        const availLines = data.availableCars.length > 0
+            ? data.availableCars.map(c => `• ${c['ทะเบียนรถ'] || c['Plate']} (${c['รุ่น'] || c['Model'] || '-'})`).join('\n')
+            : '• ไม่มีรถว่าง';
+
+        return `📊 สรุปการใช้รถ SIS ประจำวันที่ ${dateTitle}\n` +
+               `---------------------------------\n` +
+               `🚗 รถที่อยู่ระหว่างปฏิบัติงาน (${data.inUseList.length} คัน):\n${inUseLines}\n\n` +
+               `✅ รถที่คืนแล้วในวัน (${data.returnedList.length} คัน):\n${retLines}\n\n` +
+               `🅿️ รถว่างพร้อมใช้งาน (${data.availableCars.length} คัน):\n${availLines}\n\n` +
+               `📈 สรุปรวม:\n` +
+               `- คำขอใช้งานทั้งสิ้น: ${data.activeBookings.length} รายการ\n` +
+               `- ระยะทางที่วิ่งรวมวันนี้: ${data.totalMileage.toLocaleString()} กม.`;
+    }
+};
+
+window.openDailySummaryModal = function() {
+    const modal = document.getElementById('daily-summary-modal');
+    if (!modal) return;
+
+    const data = window.appState.getDailySummaryData(window.appState.dailySummaryDate);
+    const subtitle = document.getElementById('daily-modal-subtitle');
+    const content = document.getElementById('daily-modal-content');
+
+    let dateTitle = data.dateStr;
+    try {
+        const parts = data.dateStr.split('-');
+        const dt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        dateTitle = dt.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    } catch(e){}
+
+    if (subtitle) subtitle.textContent = `ประจำวันที่ ${dateTitle}`;
+
+    let html = '';
+
+    // Summary Quick Stat Row
+    html += `
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+            <div class="text-center">
+                <span class="text-[11px] text-gray-500 block">ออกปฏิบัติงาน</span>
+                <span class="text-base font-bold text-amber-700 font-mono">${data.inUseList.length} คัน</span>
+            </div>
+            <div class="text-center border-l border-slate-200">
+                <span class="text-[11px] text-gray-500 block">คืนแล้วในวัน</span>
+                <span class="text-base font-bold text-emerald-700 font-mono">${data.returnedList.length} คัน</span>
+            </div>
+            <div class="text-center border-l border-slate-200">
+                <span class="text-[11px] text-gray-500 block">ว่างพร้อมใช้</span>
+                <span class="text-base font-bold text-sky-700 font-mono">${data.availableCars.length} คัน</span>
+            </div>
+            <div class="text-center border-l border-slate-200">
+                <span class="text-[11px] text-gray-500 block">ระยะทางรวม</span>
+                <span class="text-base font-bold text-slate-800 font-mono">${data.totalMileage.toLocaleString()} กม.</span>
+            </div>
+        </div>
+    `;
+
+    // 1. In Use
+    html += `
+        <div class="space-y-2">
+            <h4 class="font-bold text-sm text-amber-900 flex items-center gap-2">
+                <i class="fa-solid fa-car-side text-amber-600"></i> รถที่อยู่ระหว่างปฏิบัติงาน (${data.inUseList.length} คัน)
+            </h4>
+    `;
+    if (data.inUseList.length === 0) {
+        html += `<div class="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center text-gray-400 text-xs">ไม่มีรถที่อยู่ระหว่างปฏิบัติงานในวันนี้</div>`;
+    } else {
+        html += `<div class="space-y-2">`;
+        data.inUseList.forEach(item => {
+            const userName = item.user.includes('@') ? item.user.split('@')[0] : item.user;
+            html += `
+                <div class="p-3 bg-amber-50/50 border border-amber-200/80 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-sky-900 px-2 py-0.5 bg-white border border-sky-200 rounded font-mono text-xs">${item.plate}</span>
+                            ${item.carModel ? `<span class="text-xs text-gray-600 font-medium">${item.carModel}</span>` : ''}
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${item.status.includes('approve') ? 'bg-emerald-100 text-emerald-700' : 'bg-yellow-100 text-yellow-800'}">
+                                ${item.status.includes('approve') ? 'อนุมัติแล้ว' : 'รออนุมัติ'}
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-700 mt-1">
+                            <i class="fa-solid fa-user text-gray-400 mr-1"></i><b>${userName}</b>
+                            <span class="text-gray-400 mx-1">|</span>
+                            <i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${item.dest}
+                        </p>
+                        ${item.purpose && item.purpose !== '-' ? `<p class="text-[11px] text-gray-500 mt-0.5"><i class="fa-solid fa-briefcase text-gray-400 mr-1"></i>${item.purpose}</p>` : ''}
+                    </div>
+                    <div class="flex items-center gap-1.5 self-end sm:self-center">
+                        <button type="button" onclick="closeDailySummaryModal(); openReturnModal('${item.plate}', '${item.mOut || ''}', ${item.rowIndex || 0})" class="px-2.5 py-1 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold shadow-sm transition inline-flex items-center gap-1">
+                            <i class="fa-solid fa-rotate-left"></i> คืนรถ
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        html += `</div>`;
+    }
+    html += `</div>`;
+
+    // 2. Returned
+    html += `
+        <div class="space-y-2">
+            <h4 class="font-bold text-sm text-emerald-900 flex items-center gap-2">
+                <i class="fa-solid fa-circle-check text-emerald-600"></i> รถที่คืนแล้วในวัน (${data.returnedList.length} คัน)
+            </h4>
+    `;
+    if (data.returnedList.length === 0) {
+        html += `<div class="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center text-gray-400 text-xs">ยังไม่มีรถที่คืนในวันนี้</div>`;
+    } else {
+        html += `<div class="space-y-2">`;
+        data.returnedList.forEach(item => {
+            const userName = item.user.includes('@') ? item.user.split('@')[0] : item.user;
+            html += `
+                <div class="p-3 bg-emerald-50/40 border border-emerald-200/80 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-sky-900 px-2 py-0.5 bg-white border border-sky-200 rounded font-mono text-xs">${item.plate}</span>
+                            ${item.carModel ? `<span class="text-xs text-gray-600 font-medium">${item.carModel}</span>` : ''}
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700">คืนแล้ว</span>
+                        </div>
+                        <p class="text-xs text-gray-700 mt-1">
+                            <i class="fa-solid fa-user text-gray-400 mr-1"></i><b>${userName}</b>
+                            <span class="text-gray-400 mx-1">|</span>
+                            <i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${item.dest}
+                        </p>
+                    </div>
+                    <div class="text-right self-end sm:self-center">
+                        <span class="text-xs font-bold text-emerald-800 font-mono block">${item.mileageDiff > 0 ? `+${item.mileageDiff.toLocaleString()} กม.` : 'ไมล์ปกติ'}</span>
+                        ${item.rowIndex ? `<button type="button" onclick="closeDailySummaryModal(); openSlipModal(${item.rowIndex})" class="text-[11px] text-sky-700 hover:underline mt-0.5 inline-block"><i class="fa-solid fa-file-invoice-dollar mr-0.5"></i>ดูใบรายงาน</button>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        html += `</div>`;
+    }
+    html += `</div>`;
+
+    // 3. Available Cars
+    html += `
+        <div class="space-y-2">
+            <h4 class="font-bold text-sm text-sky-900 flex items-center gap-2">
+                <i class="fa-solid fa-square-parking text-sky-600"></i> รถว่างพร้อมใช้งาน (${data.availableCars.length} คัน)
+            </h4>
+    `;
+    if (data.availableCars.length === 0) {
+        html += `<div class="p-3 bg-red-50 rounded-xl border border-red-100 text-center text-red-600 text-xs">ไม่มีรถว่างในวันนี้ รถทุกลำติดภารกิจ</div>`;
+    } else {
+        html += `<div class="grid grid-cols-2 sm:grid-cols-3 gap-2">`;
+        data.availableCars.forEach(c => {
+            const plate = c['ทะเบียนรถ'] || c['Plate'] || '-';
+            const model = c['รุ่น'] || c['Model'] || '';
+            const manager = c['ชื่อคนดูแล'] || c['Manager'] || '';
+            html += `
+                <div class="p-2.5 bg-sky-50/40 border border-sky-100 rounded-xl">
+                    <span class="font-bold text-sky-900 px-1.5 py-0.5 bg-white border border-sky-200 rounded font-mono text-xs">${plate}</span>
+                    <p class="text-xs font-semibold text-gray-800 mt-1 truncate">${model}</p>
+                    ${manager ? `<p class="text-[10px] text-gray-500 truncate"><i class="fa-solid fa-user-gear text-[9px] mr-1"></i>${manager}</p>` : ''}
+                </div>
+            `;
+        });
+        html += `</div>`;
+    }
+    html += `</div>`;
+
+    if (content) content.innerHTML = html;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => modal.classList.remove('opacity-0'), 20);
+};
+
+window.closeDailySummaryModal = function() {
+    const modal = document.getElementById('daily-summary-modal');
+    if (!modal) return;
+    modal.classList.add('opacity-0');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }, 200);
+};
+
+window.copyDailySummaryText = function() {
+    const text = window.generateDailySummaryText(false);
+    const btn = document.getElementById('btn-copy-daily-text');
+    const og = btn ? btn.innerHTML : '';
+
+    function onCopied() {
+        if (btn) {
+            btn.innerHTML = '<i class="fa-solid fa-check text-emerald-600"></i> คัดลอกแล้ว!';
+            setTimeout(() => { btn.innerHTML = og; }, 2000);
+        }
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(onCopied).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            onCopied();
+        });
+    } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        onCopied();
+    }
+};
+
+window.sendDailySummaryToTelegram = async function() {
+    const btnNav = document.getElementById('btn-send-daily-tg');
+    const ogNav = btnNav ? btnNav.innerHTML : '';
+    if (btnNav) {
+        btnNav.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังส่ง...';
+        btnNav.disabled = true;
+    }
+
+    const summaryHtml = window.generateDailySummaryText(true);
+    const dateStr = window.appState.dailySummaryDate || toBangkokYMD(new Date());
+
+    try {
+        const res = await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+                action: 'send_daily_summary',
+                date: dateStr,
+                summaryText: summaryHtml
+            })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            alert('✅ ส่งสรุปรายวันเข้ากลุ่ม Telegram เรียบร้อยแล้ว!');
+        } else {
+            alert('❌ เกิดข้อผิดพลาดในการส่ง: ' + (data.message || 'ไม่สามารถส่งข้อความได้'));
+        }
+    } catch(e) {
+        console.error('Send daily summary error:', e);
+        alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+    } finally {
+        if (btnNav) {
+            btnNav.innerHTML = ogNav;
+            btnNav.disabled = false;
+        }
+    }
+};

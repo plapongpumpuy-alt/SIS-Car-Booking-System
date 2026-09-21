@@ -36,3 +36,12 @@
   - Added `tab-maint` and `tab-tax` views with responsive UI, KPI summary cards, filter/search controls, and modals.
   - Added `DEFAULT_MAINTENANCE` and `DEFAULT_TAX_INSURANCE` fallback datasets and LocalStorage synchronization for 0ms loading.
   - Extended Google Apps Script (`Code.gs`) with automatic sheet provisioning (`ประวัติซ่อมบำรุง` and `ประกันและภาษีรถ`), `create_maintenance`, `renew_tax_insurance`, automated Telegram notifications, and `checkExpiringNotifications()` expiration scanner.
+- Enabled Direct Return Car from Timeline/Calendar view (2026-09-21 10:40):
+  - Made timeline booking bars interactive with clickable handlers to invoke `openReturnModal` directly for active/pending reservations.
+  - Added `[↩ คืนรถ]` visual status badge, dynamic tooltips, and fallback to `openSlipModal` when clicking completed trips.
+  - Implemented 0ms optimistic UI cache updates upon returning car, updating both Dashboard and Calendar immediately.
+- Implemented Daily Fleet Summary and Telegram Reporting System (2026-09-21 10:45):
+  - Added Daily Fleet Summary Widget (`สรุปการใช้รถรายวัน`) in `#view-dash` with date switcher (`< | วันที่ | > | วันนี้`) and 4 real-time KPI cards (In-use, Returned, Available, Total Mileage).
+  - Built comprehensive `#daily-summary-modal` with active trip breakdowns, 1-click return car shortcut, returned vehicle list with mileage calculations, and available vehicles list.
+  - Added "คัดลอกข้อความสรุป" clipboard export and "ส่งเข้า Telegram" direct fleet channel dispatch (`action: "send_daily_summary"` in `Code.gs`).
+
