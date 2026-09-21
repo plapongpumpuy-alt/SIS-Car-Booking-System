@@ -2333,10 +2333,17 @@ window.copyDailySummaryText = function() {
 
 window.sendDailySummaryToTelegram = async function() {
     const btnNav = document.getElementById('btn-send-daily-tg');
+    const btnModal = document.getElementById('btn-modal-send-daily-tg');
     const ogNav = btnNav ? btnNav.innerHTML : '';
+    const ogModal = btnModal ? btnModal.innerHTML : '';
+    
     if (btnNav) {
         btnNav.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังส่ง...';
         btnNav.disabled = true;
+    }
+    if (btnModal) {
+        btnModal.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังส่ง...';
+        btnModal.disabled = true;
     }
 
     const summaryHtml = window.generateDailySummaryText(true);
@@ -2344,7 +2351,9 @@ window.sendDailySummaryToTelegram = async function() {
 
     try {
         let success = false;
-        // 1. ส่งตรงเข้า Telegram Bot API (รวดเร็ว 0.2s และไม่ติด Cold Start ของ Apps Script)
+        let lastError = null;
+
+        // ขั้นตอนที่ 1: ส่งตรงเข้า Telegram Bot API แบบ POST (รวดเร็ว ทันที ไม่ต้องรอคิว)
         try {
             const tgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
@@ -2358,12 +2367,29 @@ window.sendDailySummaryToTelegram = async function() {
             const tgData = await tgRes.json();
             if (tgData && tgData.ok) {
                 success = true;
+            } else if (tgData && tgData.description) {
+                lastError = tgData.description;
             }
         } catch (tgErr) {
-            console.warn('Direct Telegram API failed, trying GAS proxy:', tgErr);
+            console.warn('Direct Telegram POST failed, trying GET fallback:', tgErr);
+            lastError = tgErr.message;
         }
 
-        // 2. หากต่อตรง Telegram ไม่สำเร็จ ให้ลองผ่าน Google Apps Script สำรอง
+        // ขั้นตอนที่ 2: หาก POST ติดปัญหา ให้ลองแบบ GET (ข้าม CORS preflight ได้ 100%)
+        if (!success) {
+            try {
+                const getUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(summaryHtml)}&parse_mode=HTML`;
+                const tgGetRes = await fetch(getUrl);
+                const tgGetData = await tgGetRes.json();
+                if (tgGetData && tgGetData.ok) {
+                    success = true;
+                }
+            } catch (getErr) {
+                console.warn('Telegram GET fallback failed, trying GAS proxy:', getErr);
+            }
+        }
+
+        // ขั้นตอนที่ 3: หากยังไม่สำเร็จ ให้ลองผ่าน Google Apps Script สำรอง
         if (!success) {
             try {
                 const gasRes = await fetch(GOOGLE_SCRIPT_URL, {
@@ -2381,14 +2407,14 @@ window.sendDailySummaryToTelegram = async function() {
                     success = true;
                 }
             } catch (gasErr) {
-                console.warn('GAS proxy also failed:', gasErr);
+                console.warn('GAS proxy failed:', gasErr);
             }
         }
 
         if (success) {
-            alert('✅ ส่งสรุปรายวันเข้ากลุ่ม Telegram "SIS อนุมัติการจองรถ" เรียบร้อยแล้ว!');
+            alert('✅ ส่งสรุปการใช้รถรายวันเข้ากลุ่ม Telegram "SIS อนุมัติการจองรถ" เรียบร้อยแล้ว!');
         } else {
-            alert('⚠️ ไม่สามารถส่งข้อความได้ กรุณากด "คัดลอกข้อความสรุป" เพื่อวางส่งในกลุ่มแทนครับ');
+            alert('⚠️ ไม่สามารถส่งเข้า Telegram ได้ในขณะนี้ (' + (lastError || 'การเชื่อมต่อขัดข้อง') + ')\n\n👉 ระบบขอแนะนำให้กดปุ่ม "คัดลอกข้อความสรุป" เพื่อนำไปวางส่งในกลุ่ม Telegram หรือ LINE ได้ทันทีครับ');
         }
     } catch(e) {
         console.error('Send daily summary error:', e);
@@ -2397,6 +2423,10 @@ window.sendDailySummaryToTelegram = async function() {
         if (btnNav) {
             btnNav.innerHTML = ogNav;
             btnNav.disabled = false;
+        }
+        if (btnModal) {
+            btnModal.innerHTML = ogModal;
+            btnModal.disabled = false;
         }
     }
 };
