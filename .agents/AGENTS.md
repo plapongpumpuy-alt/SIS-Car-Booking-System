@@ -12,6 +12,7 @@
 - `assets/css/style.css`: Custom styles.
 - `assets/js/utils.js`: Utility functions (Date formatting, ID generation).
 - `assets/js/app.js`: Main application logic (State management, Validation, DOM manipulation).
+- `google-apps-script/Code.gs`: Backend Google Apps Script (API handler, server-side duplicate check, Telegram Bot Webhook).
 
 ## Rules & Conventions
 - **Versioning**: Timestamp-based versioning `v.YYYY.MM.DD.HHMM`.
@@ -30,3 +31,4 @@
 - Added 1-click Download PDF (`html2pdf.js`), Send Email to Accounting modal (Gmail Web & mailto), and made entire table rows clickable (2026-09-17 08:55).
 - Configured default accounting submission recipient to `sisintegration005@gmail.com` and added CC field support for Gmail Web & mailto (2026-09-17 09:03).
 - Added official company corporate branding (SIS Integration Co.,Ltd. / บริษัท เอสไอเอส อินติเกรชั่น จำกัด (สำนักงานใหญ่), full registered address, Tax ID, phone numbers, and company logo) to the Vehicle Usage Report (2026-09-17 09:15).
+- Solved duplicate booking issue (2026-09-21 09:10): Implemented server-side collision validation in `Code.gs` for both booking creation and Telegram approval, added client-side `toBangkokYMD` timezone normalization, race-condition history-loading guard, optimistic cache updates, and double-submit button locks.

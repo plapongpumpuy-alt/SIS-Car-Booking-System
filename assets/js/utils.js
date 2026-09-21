@@ -41,11 +41,23 @@ function formatDateTimeTH(datetimeStr) {
 }
 
 /**
- * Get current datetime in local timezone format for input[type="datetime-local"] min attribute
- * @returns {string} e.g. "2026-09-15T16:20"
+ * Converts any date representation (ISO, Date, string) to YYYY-MM-DD in Bangkok (+07:00) timezone
+ * @param {string|Date} val - date string or Date object
+ * @returns {string|null} YYYY-MM-DD or null
  */
-function getCurrentDateTimeLocal() {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 16);
+function toBangkokYMD(val) {
+    if (!val || val === '-') return null;
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val.trim())) return val.trim();
+    try {
+        const d = new Date(val);
+        if (isNaN(d.getTime())) return null;
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Bangkok',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(d);
+    } catch(e) {
+        return null;
+    }
 }

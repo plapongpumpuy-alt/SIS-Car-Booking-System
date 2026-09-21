@@ -19,35 +19,19 @@ const DEFAULT_USERS = [
 ];
 
 const DEFAULT_CARS = [
-    { "ทะเบียนรถ": "1ฒม3823", "รุ่น": "D-Max", "สี": "เทา", "ยี่ห้อ": "ISUSU", "Code": "SIS003", "ชื่อคนดูแล": "นาย อัมมาร สมานพิทักษ์" },
+    { "ทะเบียนรถ": "1ฒม3823", "รุ่น": "D-Max", "สี": "เทา", "ยี่ห้อ": "ISUSU", "Code": "SIS005", "ชื่อคนดูแล": "นาย วิษณุ วงษ์คำ" },
+    { "ทะเบียนรถ": "7กฌ2554", "รุ่น": "Yamaha", "สี": "แดง", "ยี่ห้อ": "Yamaha", "Code": "SIS001", "ชื่อคนดูแล": "นาย ประพัฒน์ สกุลรัตนกุลชัย" },
+    { "ทะเบียนรถ": "4ขข7395", "รุ่น": "Civic EHEV", "สี": "ขาว", "ยี่ห้อ": "Honda", "Code": "SIS002", "ชื่อคนดูแล": "นาย สมคิด เอี่ยมสำอางค์" },
+    { "ทะเบียนรถ": "ฮฐ1300", "รุ่น": "Toyota", "สี": "ขาว", "ยี่ห้อ": "Toyota", "Code": "SIS001", "ชื่อคนดูแล": "นาย ประพัฒน์ สกุลรัตนกุลชัย" },
+    { "ทะเบียนรถ": "3ฒจ4298", "รุ่น": "Toyota Revo", "สี": "ขาว", "ยี่ห้อ": "Toyota", "Code": "SIS004", "ชื่อคนดูแล": "นาย วันจักรี เนียมพุ่มพวง" },
     { "ทะเบียนรถ": "5ขจ9318", "รุ่น": "Yaris Cross", "สี": "เทา", "ยี่ห้อ": "Toyota", "Code": "SIS001", "ชื่อคนดูแล": "นาย ประพัฒน์ สกุลรัตนกุลชัย" },
-    { "ทะเบียนรถ": "4ขช7395", "รุ่น": "Civic EHEV", "สี": "ขาว", "ยี่ห้อ": "Honda", "Code": "SIS002", "ชื่อคนดูแล": "นาย สมคิด เอี่ยมสำอางค์" },
-    { "ทะเบียนรถ": "ฮฐ1300", "รุ่น": "Toyota", "สี": "ขาว", "ยี่ห้อ": "Toyota", "Code": "SIS005", "ชื่อคนดูแล": "นาย วิษณุ วงษ์คำ" },
-    { "ทะเบียนรถ": "3ฒจ4298", "รุ่น": "Toyota Revo", "สี": "ขาว", "ยี่ห้อ": "Toyota", "Code": "SIS004", "ชื่อคนดูแล": "นาย วันจักรี เนียมพุ่มพวง" }
+    { "ทะเบียนรถ": "3ฒฮ8017", "รุ่น": "Hilux Champ", "สี": "ขาว", "ยี่ห้อ": "Toyota", "Code": "Champ", "ชื่อคนดูแล": "นาย ธนเดช อินช่วย" },
+    { "ทะเบียนรถ": "2ฆณ 2556", "รุ่น": "Yadea GS70", "สี": "เทา", "ยี่ห้อ": "Yadea", "Code": "EV01", "ชื่อคนดูแล": "" }
 ];
 
 // จะถูกเติมข้อมูลจาก LocalStorage หรือ Default ทันที และซิงค์กับ Google Sheet ในพื้นหลัง
 let userDB = [];
 let vehicleDB = [];
-
-function initLocalCache() {
-    try {
-        const cachedUsers = localStorage.getItem('sis_users');
-        const cachedCars = localStorage.getItem('sis_cars');
-        const cachedHistory = localStorage.getItem('sis_history');
-
-        userDB = cachedUsers ? JSON.parse(cachedUsers) : DEFAULT_USERS;
-        vehicleDB = cachedCars ? JSON.parse(cachedCars) : DEFAULT_CARS;
-        if (cachedHistory && window.appState) {
-            window.appState.bookings = JSON.parse(cachedHistory);
-        }
-    } catch(e) {
-        console.warn("Using fallback master data", e);
-        userDB = DEFAULT_USERS;
-        vehicleDB = DEFAULT_CARS;
-    }
-}
-initLocalCache();
 
 // App State
 window.appState = {
@@ -57,6 +41,7 @@ window.appState = {
             return h ? JSON.parse(h) : [];
         } catch(e) { return []; }
     })(),
+    isHistoryLoaded: false,
     timelineStartDate: new Date(),
     currentPayload: null,
     
@@ -92,6 +77,7 @@ window.appState = {
             if (data.status === 'success') {
                 if (data.history) {
                     this.bookings = data.history;
+                    this.isHistoryLoaded = true;
                     try { localStorage.setItem('sis_history', JSON.stringify(data.history)); } catch(e){}
                 }
                 if (data.users && data.users.length > 0) {
@@ -124,6 +110,7 @@ window.appState = {
             const data = await response.json();
             if (data.status === 'success' && data.data) {
                 this.bookings = data.data;
+                this.isHistoryLoaded = true;
                 try { localStorage.setItem('sis_history', JSON.stringify(data.data)); } catch(e){}
                 this.renderDashboard();
                 this.renderTimeline();
@@ -343,11 +330,12 @@ window.appState = {
                 let toRaw = (!Auto_todate || Auto_todate === '-') ? fromRaw : Auto_todate;
                 if(!fromRaw || fromRaw === '-') return;
                 
-                let bStart = new Date(fromRaw);
-                bStart.setHours(0,0,0,0);
-                
-                let bEnd = new Date(toRaw);
-                bEnd.setHours(0,0,0,0);
+                let bStartYMD = toBangkokYMD(fromRaw);
+                let bEndYMD = toBangkokYMD(toRaw) || bStartYMD;
+                if (!bStartYMD) return;
+
+                let bStart = new Date(bStartYMD + 'T00:00:00');
+                let bEnd = new Date(bEndYMD + 'T00:00:00');
 
                 if (bEnd < start || bStart > end) return;
 
@@ -402,9 +390,13 @@ function getVal(record, keywords) {
 function formatDateShort(dateString) {
     if(!dateString || dateString === '-') return '-';
     try {
-        const d = new Date(dateString);
-        if(isNaN(d)) return dateString;
-        return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+        const ymd = toBangkokYMD(dateString);
+        if (!ymd) return dateString;
+        const parts = ymd.split('-');
+        const d = parseInt(parts[2], 10);
+        const m = parseInt(parts[1], 10);
+        const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        return `${d} ${months[m - 1]}`;
     } catch(e) {
         return dateString;
     }
@@ -889,6 +881,27 @@ window.copyEmailBody = function() {
     }
 };
 
+function initLocalCache() {
+    try {
+        const cachedUsers = localStorage.getItem('sis_users');
+        const cachedCars = localStorage.getItem('sis_cars');
+        const cachedHistory = localStorage.getItem('sis_history');
+
+        userDB = cachedUsers ? JSON.parse(cachedUsers) : DEFAULT_USERS;
+        vehicleDB = cachedCars ? JSON.parse(cachedCars) : DEFAULT_CARS;
+        if (cachedHistory && window.appState) {
+            window.appState.bookings = JSON.parse(cachedHistory);
+            if (window.appState.bookings && window.appState.bookings.length > 0) {
+                window.appState.isHistoryLoaded = true;
+            }
+        }
+    } catch(e) {
+        console.warn("Using fallback master data", e);
+        userDB = DEFAULT_USERS;
+        vehicleDB = DEFAULT_CARS;
+    }
+}
+
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
     // 1. นำข้อมูลพนักงานและรถจากแคช/ค่าเริ่มต้นใส่ Dropdown ทันที 0ms ไม่ต้องรอ API
@@ -942,7 +955,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Booking Form Submit Logic
     const bookingForm = document.getElementById('booking-form');
     if(bookingForm) {
-        bookingForm.addEventListener('submit', (e) => {
+        bookingForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (bookingForm.checkValidity()) {
                 const dtStart = document.getElementById('dt-start');
@@ -955,20 +968,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 dtError.classList.add('hidden');
 
-                // --- ระบบป้องกันการจองซ้ำ (เช็คช่วงเวลาและสถานะรถ) ---
-                const newStart = new Date(dtStart.value);
-                newStart.setHours(0,0,0,0);
-                const newEnd = new Date(dtEnd.value);
-                newEnd.setHours(0,0,0,0);
-                const selectedPlate = vehPlateSelect.value;
+                // หากประวัติการจองยังโหลดไม่เสร็จ ให้รอโหลดข้อมูลจริงก่อน เพื่อป้องกันการจองซ้ำ
+                if (!appState.isHistoryLoaded && (!appState.bookings || appState.bookings.length === 0)) {
+                    const btn = document.getElementById('btn-submit');
+                    const ogText = btn ? btn.innerHTML : '';
+                    if (btn) {
+                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ตรวจสอบสถานะรถล่าสุด...';
+                        btn.disabled = true;
+                    }
+                    try {
+                        await appState.fetchAllData();
+                    } catch(err) {
+                        console.warn("Wait for history fetch error:", err);
+                    } finally {
+                        if (btn) {
+                            btn.innerHTML = ogText;
+                            btn.disabled = false;
+                        }
+                    }
+                }
+
+                // --- ระบบป้องกันการจองซ้ำ (เช็คช่วงเวลาและสถานะรถแบบ Timezone-safe) ---
+                const newStartYMD = toBangkokYMD(dtStart.value);
+                const newEndYMD = toBangkokYMD(dtEnd.value) || newStartYMD;
+                const selectedPlate = (vehPlateSelect.value || '').trim();
 
                 const overlapping = appState.bookings.find(b => {
-                    const bPlate = getVal(b, ['plate', 'ทะเบียนรถ', 'ทะเบียน']);
+                    const bPlate = (getVal(b, ['plate', 'ทะเบียนรถที่จอง', 'ทะเบียนรถ', 'ทะเบียน']) || '').toString().trim();
                     if (bPlate !== selectedPlate) return false;
 
-                    let status = getVal(b, ['status', 'สถานะ']).toString().toLowerCase();
+                    let status = (getVal(b, ['status', 'สถานะ']) || '').toString().toLowerCase();
                     // ถ้ารถคืนแล้ว (completed) หรือถูกปฏิเสธ (rejected) ถือว่ารถว่าง
-                    if (status.includes('reject') || status.includes('complete') || status.includes('คืนรถ')) return false;
+                    if (status.includes('reject') || status.includes('ปฏิเสธ') || status.includes('complete') || status.includes('คืนรถ')) return false;
 
                     let bStartRaw = getVal(b, ['fromdate', 'จากวันที่']);
                     let Auto_todate = getVal(b, ['todate', 'ถึงวันที่']);
@@ -976,24 +1007,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     if (!bStartRaw || bStartRaw === '-') return false;
                     
-                    let bStart = new Date(bStartRaw);
-                    bStart.setHours(0,0,0,0);
-                    let bEnd = new Date(bEndRaw);
-                    bEnd.setHours(0,0,0,0);
+                    const bStartYMD = toBangkokYMD(bStartRaw);
+                    const bEndYMD = toBangkokYMD(bEndRaw) || bStartYMD;
+                    if (!bStartYMD) return false;
 
                     // เช็คว่า วันที่จองใหม่ ทับซ้อนกับ วันที่จองเดิมที่ยังไม่คืนรถ หรือไม่
                     // (StartA <= EndB) และ (EndA >= StartB)
-                    return (newStart <= bEnd && newEnd >= bStart);
+                    return (newStartYMD <= bEndYMD && newEndYMD >= bStartYMD);
                 });
 
                 if (overlapping) {
-                    alert(`❌ ไม่สามารถจองได้!\nรถทะเบียน [ ${selectedPlate} ] มีการจองค้างอยู่หรือถูกใช้งานในช่วงวันที่คุณเลือก (และยังไม่ถูกกดคืนรถ)\n\nกรุณาเลือกรถคันอื่น หรือตรวจสอบวันที่ใหม่อีกครั้งครับ`);
+                    const existFrom = formatDateShort(getVal(overlapping, ['fromdate', 'จากวันที่']));
+                    const existTo = formatDateShort(getVal(overlapping, ['todate', 'ถึงวันที่']));
+                    const existUser = getVal(overlapping, ['email', 'คนจอง', 'ชื่อผู้จอง']);
+                    const dateRangeText = (existFrom === existTo || existTo === '-') ? existFrom : `${existFrom} - ${existTo}`;
+                    alert(`❌ ไม่สามารถจองได้!\nรถทะเบียน [ ${selectedPlate} ] มีการจองค้างอยู่แล้วในช่วงวันที่ ${dateRangeText}\nผู้จอง: ${existUser}\n\nกรุณาเลือกรถคันอื่น หรือเลือกวันเดินทางช่วงอื่นครับ`);
                     return;
                 }
                 // ----------------------------------------------------
 
                 const selectedUser = userDB[reqUserSelect.value];
-                const emailToSave = selectedUser['Email'] || selectedUser['Name'] || selectedUser['ชื่อ'] || '';
+                const emailToSave = selectedUser ? (selectedUser['Email'] || selectedUser['Name'] || selectedUser['ชื่อ'] || '') : '';
 
                 appState.currentPayload = {
                     action: "create",
@@ -1020,31 +1054,75 @@ document.addEventListener('DOMContentLoaded', () => {
     if(modalCancel) modalCancel.addEventListener('click', () => submitModal.classList.add('hidden'));
     
     if(modalConfirm) {
-        modalConfirm.addEventListener('click', () => {
-            submitModal.classList.add('hidden');
-            
-            const targetBtn = document.getElementById('btn-submit');
-            const originalBtnText = targetBtn.innerHTML;
-            targetBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังบันทึกข้อมูล...';
-            targetBtn.disabled = true;
+        modalConfirm.addEventListener('click', async () => {
+            const originalConfirmText = modalConfirm.innerHTML;
+            modalConfirm.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังส่งคำขอ...';
+            modalConfirm.disabled = true;
 
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST",
-                headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify(appState.currentPayload),
-            })
-            .then(r => r.json())
-            .then(data => {
+            const targetBtn = document.getElementById('btn-submit');
+            const originalBtnText = targetBtn ? targetBtn.innerHTML : '';
+            if (targetBtn) {
+                targetBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังบันทึกข้อมูล...';
+                targetBtn.disabled = true;
+            }
+
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(appState.currentPayload),
+                });
+                const data = await response.json();
+
                 if(data.status === "success") {
-                    alert(`✅ ส่งคำขอจองรถสำเร็จ!\nระบบได้บันทึกข้อมูลแล้ว`);
+                    // Optimistic update: เพิ่มลง state และ localStorage ทันที ป้องกันการจองซ้ำทันที 100%
+                    const nextRowIndex = (appState.bookings && appState.bookings.length > 0) 
+                        ? (Math.max(...appState.bookings.map(b => parseInt(b._rowIndex) || 0)) + 1) 
+                        : 2;
+
+                    const newBookingRecord = {
+                        _rowIndex: nextRowIndex,
+                        "วันที่ เวลา ที่จอง": appState.currentPayload.bookingDatetime,
+                        "คนจอง(Gmail)": appState.currentPayload.email,
+                        "จากวันที่": appState.currentPayload.fromDate,
+                        "ถึงวันที่": appState.currentPayload.toDate,
+                        "จำนวนกี่วัน": appState.currentPayload.days,
+                        "ไปทำอะไร": appState.currentPayload.purpose,
+                        "ไปที่ไหน": appState.currentPayload.destination,
+                        "ทะเบียนรถที่จอง": appState.currentPayload.plate,
+                        "เลขไมล์ออก": appState.currentPayload.mileageOut || "",
+                        "เลขไมล์เข้า": "",
+                        "ค่าทางด่วน": "",
+                        "บัตรทางด่วนคงเหลือ": "",
+                        "สถานะ": "รออนุมัติ",
+                        "หมายเหตุ": ""
+                    };
+                    appState.bookings.push(newBookingRecord);
+                    try { localStorage.setItem('sis_history', JSON.stringify(appState.bookings)); } catch(e){}
+                    appState.renderDashboard();
+                    appState.renderTimeline();
+
+                    submitModal.classList.add('hidden');
+                    alert(`✅ ส่งคำขอจองรถสำเร็จ!\nระบบได้บันทึกข้อมูลและส่งแจ้งเตือนไปยังผู้ดูแลเรียบร้อยแล้ว`);
                     bookingForm.reset();
                     document.getElementById('user-info-card').classList.add('hidden');
                     document.getElementById('car-info-card').classList.add('hidden');
-                    appState.fetchBookings(); // Refresh cache quietly
-                } else { alert(`❌ เกิดข้อผิดพลาดจากเซิร์ฟเวอร์: ${data.message}`); }
-            })
-            .catch(err => alert("❌ ไม่สามารถติดต่อเซิร์ฟเวอร์ได้"))
-            .finally(() => { targetBtn.innerHTML = originalBtnText; targetBtn.disabled = false; });
+                    appState.fetchBookings(); // Sync silently in background
+                } else {
+                    submitModal.classList.add('hidden');
+                    alert(`❌ ไม่สามารถทำการจองได้:\n${data.message || 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์'}`);
+                }
+            } catch(err) {
+                submitModal.classList.add('hidden');
+                alert("❌ ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต");
+            } finally {
+                modalConfirm.innerHTML = originalConfirmText;
+                modalConfirm.disabled = false;
+                if (targetBtn) {
+                    targetBtn.innerHTML = originalBtnText;
+                    targetBtn.disabled = false;
+                }
+            }
         });
     }
 

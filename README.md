@@ -1,12 +1,18 @@
 # SIS Car Booking System
-**Version:** v.2026.09.17.0915
-**Last Updated:** 2026-09-17 09:15:00+07:00
+**Version:** v.2026.09.21.0910
+**Last Updated:** 2026-09-21 09:10:00+07:00
 **Live Website (GitHub Pages):** [https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/](https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/)
 
 ## Overview
 Welcome to the SIS Car Booking System. This document serves as the main user manual and work log.
 
 ## Work Log / Changelog
+- **2026-09-21 09:10**: Fixed duplicate booking issue across Frontend and Backend (Google Apps Script):
+  - **Server-side Validation (`Code.gs`)**: Added strict overlap check on `action: "create"` in Google Apps Script. Rejects duplicate submissions with clear error message if the car is already booked/pending during the requested date range.
+  - **Telegram Bot Conflict Prevention**: Added collision check in `handleTelegramClick` to prevent multiple approvals for the same vehicle and overlapping dates.
+  - **Timezone-safe Normalization (`toBangkokYMD`)**: Normalized date comparisons to `Asia/Bangkok` (`YYYY-MM-DD`) across all devices and browsers, eliminating timezone parsing drift.
+  - **Client-side Race Condition Safeguards**: Blocked form submission if history data is still loading from Google Sheets. Added immediate optimistic cache update on successful booking and disabled confirmation button to prevent double-click submissions.
+  - **Master Data Expansion**: Updated fallback `DEFAULT_CARS` with all active company vehicles including `3ฒฮ8017` (Hilux Champ) and electric bike.
 - **2026-09-17 09:15**: Added Official SIS Integration Corporate Header & Logo to Vehicle Usage Report:
   - Applied official Thai company name: `บริษัท เอสไอเอส อินติเกรชั่น จำกัด (สำนักงานใหญ่)`
   - Applied official English company name: `SIS Integration Co.,Ltd. (Head Office)`
