@@ -1,4 +1,6 @@
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFDhxfRoLMyLQu7aQjy3eTNGFHvKhgX02Z_BeRaE2RRVZWtNRwTLIXs50JGm1ujAPICA/exec";
+const TELEGRAM_BOT_TOKEN = "8232899917:AAGL6nl13xIF3U6kHNIA0hlnPAo__bALH0c";
+const TELEGRAM_CHAT_ID = "-5435344787";
 
 // Master data fallback (โหลดได้ทันที 0ms ไม่ต้องรอ Google Sheets)
 const DEFAULT_USERS = [
@@ -2341,24 +2343,56 @@ window.sendDailySummaryToTelegram = async function() {
     const dateStr = window.appState.dailySummaryDate || toBangkokYMD(new Date());
 
     try {
-        const res = await fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({
-                action: 'send_daily_summary',
-                date: dateStr,
-                summaryText: summaryHtml
-            })
-        });
-        const data = await res.json();
-        if (data.status === 'success') {
-            alert('✅ ส่งสรุปรายวันเข้ากลุ่ม Telegram เรียบร้อยแล้ว!');
+        let success = false;
+        // 1. ส่งตรงเข้า Telegram Bot API (รวดเร็ว 0.2s และไม่ติด Cold Start ของ Apps Script)
+        try {
+            const tgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: TELEGRAM_CHAT_ID,
+                    text: summaryHtml,
+                    parse_mode: 'HTML'
+                })
+            });
+            const tgData = await tgRes.json();
+            if (tgData && tgData.ok) {
+                success = true;
+            }
+        } catch (tgErr) {
+            console.warn('Direct Telegram API failed, trying GAS proxy:', tgErr);
+        }
+
+        // 2. หากต่อตรง Telegram ไม่สำเร็จ ให้ลองผ่าน Google Apps Script สำรอง
+        if (!success) {
+            try {
+                const gasRes = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'send_daily_summary',
+                        date: dateStr,
+                        message: summaryHtml,
+                        summaryText: summaryHtml
+                    })
+                });
+                const gasData = await gasRes.json();
+                if (gasData && gasData.status === 'success') {
+                    success = true;
+                }
+            } catch (gasErr) {
+                console.warn('GAS proxy also failed:', gasErr);
+            }
+        }
+
+        if (success) {
+            alert('✅ ส่งสรุปรายวันเข้ากลุ่ม Telegram "SIS อนุมัติการจองรถ" เรียบร้อยแล้ว!');
         } else {
-            alert('❌ เกิดข้อผิดพลาดในการส่ง: ' + (data.message || 'ไม่สามารถส่งข้อความได้'));
+            alert('⚠️ ไม่สามารถส่งข้อความได้ กรุณากด "คัดลอกข้อความสรุป" เพื่อวางส่งในกลุ่มแทนครับ');
         }
     } catch(e) {
         console.error('Send daily summary error:', e);
-        alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+        alert('⚠️ ไม่สามารถเชื่อมต่อระบบส่งข้อความได้ กรุณากด "คัดลอกข้อความสรุป" เพื่อวางส่งในกลุ่มแทนครับ');
     } finally {
         if (btnNav) {
             btnNav.innerHTML = ogNav;

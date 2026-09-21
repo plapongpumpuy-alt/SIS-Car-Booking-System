@@ -324,8 +324,9 @@ function doPost(e) {
   // ACTION: ส่งรายงานสรุปการใช้รถประจำวันเข้า Telegram (send_daily_summary)
   // ----------------------------------------------------
   if (payload.action === "send_daily_summary") {
-    if (payload.message) {
-      sendTelegram(payload.message);
+    var summaryMsg = payload.message || payload.summaryText || payload.text;
+    if (summaryMsg) {
+      sendTelegram(summaryMsg);
       return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
         .setMimeType(ContentService.MimeType.JSON);
     }
