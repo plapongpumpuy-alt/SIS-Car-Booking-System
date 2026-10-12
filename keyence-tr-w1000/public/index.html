@@ -310,9 +310,102 @@
             font-weight: 600;
             cursor: default;
         }
+
+        /* Hardware License Lock Overlay */
+        .license-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(15, 23, 42, 0.92);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .license-box {
+            width: 100%;
+            max-width: 540px;
+            background-color: #ffffff;
+            border: 2px solid #0f4c81;
+            border-radius: 4px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+        .license-box-header {
+            background-color: #102a43;
+            color: #ffffff;
+            padding: 0.85rem 1.25rem;
+            border-bottom: 2px solid #0284c7;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
     </style>
 </head>
 <body>
+
+<!-- Hardware License Activation Lock Screen -->
+<div class="license-overlay" id="licenseLockOverlay">
+    <div class="license-box">
+        <div class="license-box-header">
+            <div>
+                <div class="mono small text-info fw-bold">HARDWARE SECURITY PROTECTION</div>
+                <div class="fw-bold fs-6">ต้องยืนยันสิทธิ์การใช้งานประจำเครื่อง (Machine License)</div>
+            </div>
+            <span class="badge bg-danger rounded-1 mono">LOCKED</span>
+        </div>
+        <div class="p-4">
+            <div class="alert alert-warning py-2 px-3 small mb-3 rounded-1 border-warning" id="licLockReason">
+                โปรแกรมนี้ถูกล็อกให้ใช้งานได้เฉพาะคอมพิวเตอร์ที่ได้รับอนุญาตเท่านั้น กรุณานำรหัส Machine ID ด้านล่างไปสร้างรหัสเปิดใช้งานจากโปรแกรม <strong>Keyence License Activator</strong>
+            </div>
+
+            <!-- Machine ID Display -->
+            <div class="mb-3">
+                <label class="field-label">
+                    <span>Machine ID ของคอมพิวเตอร์เครื่องนี้</span>
+                    <span class="text-muted mono" id="licHostnameLabel">HOST: -</span>
+                </label>
+                <div class="input-group">
+                    <input type="text" class="form-control form-control-lg mono fw-bold text-center bg-dark text-info border-dark" id="txtMachineIdDisplay" value="KTRW-XXXX-XXXX-XXXX" readonly>
+                    <button type="button" class="btn btn-tool px-3" id="btnCopyMachineId">
+                        คัดลอก Machine ID
+                    </button>
+                </div>
+            </div>
+
+            <!-- Form กรอก Activation Key -->
+            <form id="licenseActivateForm" class="mb-3">
+                <div class="mb-3">
+                    <label class="field-label" for="txtActivationKeyInput">
+                        <span>Activation Key (รหัสปลดล็อกเครื่อง) *</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        class="form-control form-control-lg mono fw-bold text-center text-uppercase" 
+                        id="txtActivationKeyInput" 
+                        placeholder="ACTV-XXXX-XXXX-XXXX-XXXX" 
+                        required
+                    >
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-industrial btn-lg" id="btnActivateKey">
+                        ACTIVATE LICENSE / ยืนยันรหัสเปิดใช้งาน
+                    </button>
+                </div>
+            </form>
+
+            <!-- หรืออัปโหลดไฟล์ license.json -->
+            <div class="pt-3 border-top d-flex align-items-center justify-content-between">
+                <span class="small text-secondary">หรือนำเข้าไฟล์ <code>license.json</code> โดยตรง:</span>
+                <div>
+                    <input type="file" id="fileLicenseInput" accept=".json,.key" class="d-none">
+                    <button type="button" class="btn btn-tool" id="btnImportLicenseFile">
+                        เลือกไฟล์ license.json
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Top System Bar -->
 <header class="sys-topbar d-flex flex-wrap align-items-center justify-content-between gap-2">
@@ -322,6 +415,7 @@
         <span class="text-white-50 small ms-2 d-none d-md-inline mono">| HTTP/side.asp Interface</span>
     </div>
     <div class="d-flex align-items-center gap-3 small mono">
+        <span class="badge bg-success bg-opacity-25 text-light border border-light border-opacity-25 rounded-1 fw-normal" id="licenseTopBadge">LICENSE: CHECKING...</span>
         <span class="text-white-50">TARGET: <strong class="text-white" id="headerIpBadge">192.168.100.145</strong></span>
         <span class="text-info" id="lblPingDetail">SESSION: -</span>
     </div>
@@ -710,11 +804,13 @@
     });
 
     setInterval(() => {
-        checkDeviceStatus();
+        if (typeof isMachineLicensed !== 'undefined' && isMachineLicensed) {
+            checkDeviceStatus();
+        }
     }, 5000);
 
     function refreshLiveScreen() {
-        if (isScreenLoading) return;
+        if ((typeof isMachineLicensed !== 'undefined' && !isMachineLicensed) || isScreenLoading) return;
         isScreenLoading = true;
         const nextUrl = `/api/screen-image?t=${Date.now()}`;
         const tempImg = new Image();
@@ -1113,10 +1209,141 @@
         await confirmAndSendComment(message);
     });
 
-    checkDeviceStatus();
-    loadCommentList();
-    refreshLiveScreen();
+    // ==========================================
+    // Hardware Machine License Verification
+    // ==========================================
+    const licenseLockOverlay = document.getElementById('licenseLockOverlay');
+    const txtMachineIdDisplay = document.getElementById('txtMachineIdDisplay');
+    const licHostnameLabel = document.getElementById('licHostnameLabel');
+    const licLockReason = document.getElementById('licLockReason');
+    const btnCopyMachineId = document.getElementById('btnCopyMachineId');
+    const licenseActivateForm = document.getElementById('licenseActivateForm');
+    const txtActivationKeyInput = document.getElementById('txtActivationKeyInput');
+    const btnActivateKey = document.getElementById('btnActivateKey');
+    const btnImportLicenseFile = document.getElementById('btnImportLicenseFile');
+    const fileLicenseInput = document.getElementById('fileLicenseInput');
+    const licenseTopBadge = document.getElementById('licenseTopBadge');
+    let isMachineLicensed = false;
+
+    async function checkMachineLicense() {
+        try {
+            const res = await fetch('/api/license');
+            const data = await res.json();
+
+            txtMachineIdDisplay.value = data.machineId || 'UNKNOWN';
+            licHostnameLabel.textContent = `HOST: ${data.hostname || '-'}`;
+
+            if (data.licensed) {
+                isMachineLicensed = true;
+                licenseLockOverlay.style.display = 'none';
+                licenseTopBadge.textContent = `LICENSED: ${data.machineId}`;
+                licenseTopBadge.className = 'badge bg-success text-white rounded-1 fw-normal';
+                checkDeviceStatus();
+                loadCommentList();
+                refreshLiveScreen();
+            } else {
+                isMachineLicensed = false;
+                licenseLockOverlay.style.display = 'flex';
+                licenseTopBadge.textContent = `UNLICENSED (${data.machineId})`;
+                licenseTopBadge.className = 'badge bg-danger text-white rounded-1 fw-normal';
+                if (data.reason) {
+                    licLockReason.innerHTML = `${escapeHtml(data.reason)}<br><span class="text-dark">กรุณานำ <strong>Machine ID</strong> ด้านล่างไปสร้างรหัสเปิดใช้งานจากโปรแกรม <strong>Keyence License Activator</strong></span>`;
+                }
+            }
+        } catch (err) {
+            console.error('License check error:', err);
+        }
+    }
+
+    btnCopyMachineId.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(txtMachineIdDisplay.value);
+            const orig = btnCopyMachineId.textContent;
+            btnCopyMachineId.textContent = 'คัดลอกแล้ว!';
+            setTimeout(() => { btnCopyMachineId.textContent = orig; }, 1500);
+        } catch (e) {
+            txtMachineIdDisplay.select();
+            document.execCommand('copy');
+        }
+    });
+
+    async function submitActivation(activationKey, licensedTo = '') {
+        btnActivateKey.disabled = true;
+        const origHtml = btnActivateKey.innerHTML;
+        btnActivateKey.innerHTML = 'VERIFYING...';
+        try {
+            const res = await fetch('/api/license/activate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ activationKey, licensedTo })
+            });
+            const result = await res.json();
+            if (res.ok && result.success) {
+                await checkMachineLicense();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Activate License สำเร็จ!',
+                    html: `<div class="mono small">เครื่องหมายเลข <strong>${escapeHtml(result.license.machineId)}</strong> ได้รับอนุญาตให้ใช้งานเรียบร้อยแล้ว</div>`,
+                    confirmButtonColor: '#0f4c81'
+                });
+            } else {
+                throw new Error(result.error || 'รหัส Activation Key ไม่ถูกต้อง');
+            }
+        } catch (err) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Activation Failed',
+                text: err.message,
+                confirmButtonColor: '#0f4c81'
+            });
+        } finally {
+            btnActivateKey.disabled = false;
+            btnActivateKey.innerHTML = origHtml;
+        }
+    }
+
+    licenseActivateForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const key = txtActivationKeyInput.value.trim();
+        if (!key) return;
+        await submitActivation(key);
+    });
+
+    btnImportLicenseFile.addEventListener('click', () => fileLicenseInput.click());
+
+    fileLicenseInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+            try {
+                const content = String(ev.target.result || '').trim();
+                let key = content;
+                let licensedTo = '';
+                if (content.startsWith('{')) {
+                    const parsed = JSON.parse(content);
+                    key = parsed.activationKey || '';
+                    licensedTo = parsed.licensedTo || '';
+                }
+                txtActivationKeyInput.value = key;
+                await submitActivation(key, licensedTo);
+            } catch (err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ไฟล์ไม่ถูกต้อง',
+                    text: 'ไม่สามารถอ่านข้อมูลจากไฟล์ license.json ได้',
+                    confirmButtonColor: '#0f4c81'
+                });
+            } finally {
+                fileLicenseInput.value = '';
+            }
+        };
+        reader.readAsText(file);
+    });
+
+    checkMachineLicense();
 </script>
 
 </body>
 </html>
+

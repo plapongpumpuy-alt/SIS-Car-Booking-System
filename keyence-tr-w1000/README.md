@@ -1,7 +1,7 @@
 # Keyence TR-W1000 Comment Sender Web App
-**Version:** `v.2026.10.12.1438`
+**Version:** `v.2026.10.12.1525`
 
-Web Application สำหรับส่งข้อความ Comment ไปแสดงผลบนเครื่องบันทึกข้อมูลไร้สาย **Keyence TR-W1000** ผ่านโปรโตคอล HTTP POST (`side.asp`)
+Web Application สำหรับส่งข้อความ Comment ไปแสดงผลบนเครื่องบันทึกข้อมูลไร้สาย **Keyence TR-W1000** ผ่านโปรโตคอล HTTP POST (`side.asp`) พร้อมระบบ **Hardware Machine License Lock** ป้องกันการนำโปรแกรมไปเปิดใช้งานบนคอมพิวเตอร์เครื่องอื่นโดยไม่ได้รับอนุญาต
 
 ---
 
@@ -10,33 +10,28 @@ Web Application สำหรับส่งข้อความ Comment ไป�
 keyence-tr-w1000/
 ├── start-server.bat     # ไฟล์คลิกเดียวรันโปรแกรม (เปิด Server + เปิดหน้าเว็บอัตโนมัติ)
 ├── package.json         # กำหนด Dependencies ของ Node.js (express, axios, cors)
+├── license.json         # ไฟล์เก็บสิทธิ์การใช้งานประจำเครื่อง (สร้างหลัง Activate สำเร็จ)
 ├── config.json          # ไฟล์ตั้งค่า IP ของเครื่อง Recorder
 ├── comments-history.json# ไฟล์เก็บประวัติรายการ Comment
-├── server.js            # Backend (Node.js + Express + Axios + Session Handshake)
+├── server.js            # Backend (Node.js + Express + Axios + Hardware License Lock)
 ├── README.md            # คู่มือการติดตั้ง ใช้งาน และบันทึกการทำงาน (Work Log)
 └── public/
     └── index.html       # Frontend (Industrial Engineering Control Utility UI)
 ```
 
----
-
-## วิธีนำไปใช้งานบนคอมพิวเตอร์เครื่องอื่นในวง LAN เดียวกัน
-
-สามารถเลือกใช้งานได้ **2 วิธี** ตามความสะดวก:
-
-### วิธีที่ 1: เปิดผ่าน Web Browser จากคอมเครื่องอื่นได้เลย (ไม่ต้องก๊อปปี้ไฟล์ / ไม่ต้องลงโปรแกรมเพิ่ม)
-หากเปิด Server รันทิ้งไว้ที่เครื่องปัจจุบันอยู่แล้ว คอมพิวเตอร์หรือแท็บเล็ตเครื่องอื่นที่ต่อ Wi-Fi / LAN วงเดียวกัน (`192.168.100.x`) สามารถเปิด Browser (Chrome / Edge) แล้วพิมพ์ URL ของเครื่องนี้ได้ทันที:
-- **URL สำหรับเข้าจากเครื่องอื่นในวง LAN:** `http://192.168.100.144:3000`
-*(หากเข้าไม่ได้ ให้อนุญาตพอร์ต TCP `3000` หรือ Node.js ใน Windows Defender Firewall ของเครื่องที่รัน Server)*
+*(แอปสำหรับสร้างรหัสปลดล็อกของผู้ดูแลระบบแยกอยู่ที่โฟลเดอร์ [`../keyence-license-generator/`](file:///e:/Project/SIS%20Car%20Booking%20System/keyence-license-generator))*
 
 ---
 
-### วิธีที่ 2: ย้าย/ก๊อปปี้โฟลเดอร์ไปรันบนคอมอีกเครื่องโดยตรง (Standalone)
-หากต้องการย้ายตัวโปรแกรมไปเปิดรันที่คอมพิวเตอร์อีกเครื่องโดยไม่ต้องพึ่งเครื่องเดิม:
-1. **ติดตั้ง Node.js** บนคอมพิวเตอร์เครื่องใหม่ (ดาวน์โหลดตัวติดตั้ง LTS ได้ที่ [https://nodejs.org](https://nodejs.org) — ติดตั้งเพียงครั้งเดียว)
-2. **ก๊อปปี้โฟลเดอร์ `keyence-tr-w1000` ทั้งโฟลเดอร์** ไปวางไว้ที่คอมพิวเตอร์เครื่องใหม่
-3. **ดับเบิลคลิกไฟล์ `start-server.bat`** ในโฟลเดอร์ `keyence-tr-w1000`
-   - ตัวสคริปต์จะตรวจสอบ `node_modules` ให้อัตโนมัติ รัน `node server.js` และเด้งเปิดหน้าเว็บ [http://localhost:3000](http://localhost:3000) ให้ทันที
+## ระบบล็อกสิทธิ์การใช้งานประจำเครื่อง (Hardware Machine License Lock)
+
+1. **ล็อกเฉพาะเครื่อง (`127.0.0.1` Localhost Only + Windows `MachineGuid`)**:
+   - ตัวโปรแกรมจะอ่านค่า `MachineGuid` ของคอมพิวเตอร์จาก Windows Registry แล้วแปลงเป็นรหัส **`Machine ID`** (เช่น `KTRW-44EC-7DB5-924D`)
+   - หากยังไม่ได้เปิดใช้งาน หรือมีคนก๊อปปี้โฟลเดอร์ (รวมถึงไฟล์ `license.json` ของเครื่องเดิม) ไปเปิดบนคอมพิวเตอร์เครื่องอื่น โปรแกรมจะตรวจพบว่า `Machine ID` ไม่ตรงกันและขึ้นหน้าจอ **HARDWARE SECURITY PROTECTION (LOCKED)** ทันที
+2. **การปลดล็อกด้วยแอป [`keyence-license-generator`](file:///e:/Project/SIS%20Car%20Booking%20System/keyence-license-generator/index.html)**:
+   - ผู้ดูแลระบบเปิดไฟล์ [`keyence-license-generator/index.html`](file:///e:/Project/SIS%20Car%20Booking%20System/keyence-license-generator/index.html) (หรือ `open-keygen.bat`)
+   - นำรหัส **`Machine ID`** ที่แสดงบนหน้าจอเครื่องปลายทางไปวาง แล้วกด **GENERATE KEY**
+   - นำรหัส **`Activation Key`** (`ACTV-XXXX-XXXX-XXXX-XXXX`) หรือไฟล์ `license.json` ที่ได้ ไปปลดล็อกที่เครื่องปลายทาง
 
 ---
 
@@ -88,6 +83,12 @@ keyence-tr-w1000/
 ---
 
 ## บันทึกการทำงานและอัปเดต (Work Log & Changelog)
+
+### `v.2026.10.12.1525` (2026-10-12 15:25)
+- **เพิ่มระบบล็อกสิทธิ์การใช้งานประจำเครื่อง (Hardware Machine License Lock) และสร้างแอป `keyence-license-generator/` แยกสำหรับ Admin**:
+  - อัปเดต [`server.js`](file:///e:/Project/SIS%20Car%20Booking%20System/keyence-tr-w1000/server.js) ให้อ่านค่า `MachineGuid` ประจำเครื่องจาก Windows Registry มาแปลงเป็นรหัส `Machine ID` (`KTRW-XXXX-XXXX-XXXX`), ล็อกพอร์ตเป็น `127.0.0.1` (Localhost เท่านั้น), และบังคับตรวจสอบ `license.json` ก่อนอนุญาตให้เรียกใช้งาน API ทั้งหมด
+  - เพิ่มหน้าจอ **Hardware Security Protection (LOCKED)** ใน [`public/index.html`](file:///e:/Project/SIS%20Car%20Booking%20System/keyence-tr-w1000/public/index.html) รองรับทั้งการกรอกรหัส `Activation Key` (`ACTV-XXXX-XXXX-XXXX-XXXX`) และการนำเข้าไฟล์ `license.json`
+  - สร้างแอปพลิเคชันแยก [`keyence-license-generator/`](file:///e:/Project/SIS%20Car%20Booking%20System/keyence-license-generator/index.html) (พร้อม `open-keygen.bat` และ `generate-key.js`) สำหรับให้ Admin ใช้สร้างรหัส `Activation Key` และดาวน์โหลดไฟล์ `license.json` แบบ Offline 100%
 
 ### `v.2026.10.12.1438` (2026-10-12 14:38)
 - **ออกแบบหน้าเว็บใหม่ในสไตล์ซอฟต์แวร์วิศวกรรมโรงงาน (Industrial Engineering / Factory HMI Utility UI)**:

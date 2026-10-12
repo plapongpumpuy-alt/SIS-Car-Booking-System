@@ -3,13 +3,118 @@ const axios = require('axios');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+const os = require('os');
+const { execSync } = require('child_process');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ไฟล์ตั้งค่าอุปกรณ์ (config.json) และไฟล์เก็บประวัติการส่ง Comment (comments-history.json)
+// ไฟล์ตั้งค่าอุปกรณ์ (config.json), ประวัติ (comments-history.json), และไฟล์สิทธิ์การใช้งานเครื่อง (license.json)
 const CONFIG_FILE = path.join(__dirname, 'config.json');
 const HISTORY_FILE = path.join(__dirname, 'comments-history.json');
+const LICENSE_FILE = path.join(__dirname, 'license.json');
+
+// รหัสลับหลักสำหรับตรวจสอบ Activation Key (ตรงกับแอป Keyence License Generator)
+const LICENSE_MASTER_SECRET = 'SIS_KEYENCE_TRW1000_MASTER_SECRET_2026_#9981';
+let cachedMachineId = null;
+
+/**
+ * อ่านค่า Machine ID ประจำเครื่องคอมพิวเตอร์จาก Windows Registry (MachineGuid)
+ * รูปแบบ: KTRW-XXXX-XXXX-XXXX
+ */
+function getMachineId() {
+    if (cachedMachineId) return cachedMachineId;
+
+    let rawHwId = '';
+    try {
+        const regOut = execSync(
+            'reg query "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography" /v MachineGuid',
+            { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
+        );
+        const match = regOut.match(/MachineGuid\s+REG_SZ\s+([^\r\n]+)/i);
+        if (match && match[1]) {
+            rawHwId = match[1].trim();
+        }
+    } catch (e) {}
+
+    if (!rawHwId) {
+        const cpus = os.cpus();
+        const cpuModel = cpus && cpus.length > 0 ? cpus[0].model : 'UNKNOWN_CPU';
+        rawHwId = `${os.hostname()}|${os.platform()}|${os.arch()}|${cpuModel}`;
+    }
+
+    const hash = crypto
+        .createHash('sha256')
+        .update('KEYENCE-TRW1000-HWID:' + rawHwId)
+        .digest('hex')
+        .toUpperCase();
+
+    cachedMachineId = `KTRW-${hash.slice(0, 4)}-${hash.slice(4, 8)}-${hash.slice(8, 12)}`;
+    return cachedMachineId;
+}
+
+/**
+ * สร้างรหัส Activation Key ที่ถูกต้องสำหรับ Machine ID นั้นๆ
+ * รูปแบบ: ACTV-XXXX-XXXX-XXXX-XXXX
+ */
+function computeExpectedActivationKey(machineId) {
+    const cleanId = String(machineId || '').trim().toUpperCase();
+    const hex = crypto
+        .createHash('sha256')
+        .update(`${LICENSE_MASTER_SECRET}::${cleanId}::V1_PERMANENT`)
+        .digest('hex')
+        .toUpperCase();
+    return `ACTV-${hex.slice(0, 4)}-${hex.slice(8, 12)}-${hex.slice(16, 20)}-${hex.slice(24, 28)}`;
+}
+
+/**
+ * ตรวจสอบสถานะ License ของเครื่องปัจจุบัน
+ */
+function checkLicenseStatus() {
+    const currentMachineId = getMachineId();
+    const expectedKey = computeExpectedActivationKey(currentMachineId);
+
+    try {
+        if (!fs.existsSync(LICENSE_FILE)) {
+            return {
+                licensed: false,
+                machineId: currentMachineId,
+                hostname: os.hostname(),
+                reason: 'ยังไม่ได้ลงทะเบียนเปิดใช้งาน (ไม่พบไฟล์ license.json)'
+            };
+        }
+
+        const raw = fs.readFileSync(LICENSE_FILE, 'utf8');
+        const lic = JSON.parse(raw);
+        const savedKey = String(lic.activationKey || '').trim().toUpperCase();
+        const savedMachineId = String(lic.machineId || '').trim().toUpperCase();
+
+        if (savedMachineId !== currentMachineId || savedKey !== expectedKey) {
+            return {
+                licensed: false,
+                machineId: currentMachineId,
+                hostname: os.hostname(),
+                reason: `License นี้ถูกผูกไว้กับเครื่องอื่น (${savedMachineId || 'Unknown'}) ไม่สามารถนำมาใช้บนเครื่องนี้ (${currentMachineId}) ได้`
+            };
+        }
+
+        return {
+            licensed: true,
+            machineId: currentMachineId,
+            hostname: os.hostname(),
+            licensedTo: lic.licensedTo || 'Authorized Station',
+            activatedAt: lic.activatedAt || ''
+        };
+    } catch (err) {
+        return {
+            licensed: false,
+            machineId: currentMachineId,
+            hostname: os.hostname(),
+            reason: 'ไฟล์ license.json ชำรุดหรือไม่ถูกต้อง'
+        };
+    }
+}
 
 // Middleware
 app.use(cors());
@@ -18,6 +123,77 @@ app.use(express.urlencoded({ extended: true }));
 
 // ให้บริการไฟล์หน้าเว็บ Static (index.html)
 app.use(express.static(path.join(__dirname, 'public')));
+
+/**
+ * API Endpoint: GET /api/license
+ * ดึงข้อมูล Machine ID ของเครื่องปัจจุบัน และสถานะการเปิดใช้งาน License
+ */
+app.get('/api/license', (req, res) => {
+    const status = checkLicenseStatus();
+    return res.json({
+        success: true,
+        ...status
+    });
+});
+
+/**
+ * API Endpoint: POST /api/license/activate
+ * ลงทะเบียนเปิดใช้งานด้วย Activation Key หรือข้อมูลจากไฟล์ license.json
+ */
+app.post('/api/license/activate', (req, res) => {
+    const currentMachineId = getMachineId();
+    const expectedKey = computeExpectedActivationKey(currentMachineId);
+    const { activationKey, licensedTo } = req.body;
+
+    const cleanInputKey = String(activationKey || '').trim().toUpperCase();
+    if (!cleanInputKey) {
+        return res.status(400).json({
+            success: false,
+            error: 'กรุณากรอกรหัส Activation Key'
+        });
+    }
+
+    if (cleanInputKey !== expectedKey) {
+        return res.status(403).json({
+            success: false,
+            error: `รหัส Activation Key ไม่ถูกต้องสำหรับเครื่องหมายเลข ${currentMachineId}`
+        });
+    }
+
+    const licenseData = {
+        machineId: currentMachineId,
+        activationKey: expectedKey,
+        licensedTo: (licensedTo && String(licensedTo).trim()) ? String(licensedTo).trim() : os.hostname(),
+        activatedAt: new Date().toISOString()
+    };
+
+    fs.writeFileSync(LICENSE_FILE, JSON.stringify(licenseData, null, 2), 'utf8');
+
+    return res.json({
+        success: true,
+        message: 'เปิดใช้งาน License สำหรับเครื่องนี้สำเร็จ!',
+        license: checkLicenseStatus()
+    });
+});
+
+/**
+ * Middleware บล็อกการใช้งาน API ทั้งหมดหากเครื่องนี้ยังไม่ได้ Activate License ที่ถูกต้อง
+ */
+app.use('/api', (req, res, next) => {
+    if (req.path.startsWith('/license')) {
+        return next();
+    }
+    const status = checkLicenseStatus();
+    if (!status.licensed) {
+        return res.status(403).json({
+            success: false,
+            licenseLocked: true,
+            machineId: status.machineId,
+            error: status.reason || 'โปรแกรมยังไม่ได้รับอนุญาตให้ใช้งานบนเครื่องนี้'
+        });
+    }
+    next();
+});
 
 /**
  * อ่านไฟล์ตั้งค่า config.json
@@ -678,30 +854,15 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-const os = require('os');
-
-function getLocalLanIps() {
-    const nets = os.networkInterfaces();
-    const ips = [];
-    for (const name of Object.keys(nets)) {
-        for (const net of nets[name]) {
-            if (net.family === 'IPv4' && !net.internal) {
-                ips.push(net.address);
-            }
-        }
-    }
-    return ips;
-}
-
-app.listen(PORT, '0.0.0.0', () => {
+// ล็อกให้เปิดใช้งานได้เฉพาะบนเครื่องนี้เท่านั้น (127.0.0.1 Localhost Only)
+app.listen(PORT, '127.0.0.1', () => {
     const cfg = loadConfig();
-    const lanIps = getLocalLanIps();
+    const lic = checkLicenseStatus();
     console.log(`====================================================`);
-    console.log(`🚀 Keyence TR-W1000 Server running!`);
-    console.log(`💻 เปิดจากเครื่องนี้ (Local):   http://localhost:${PORT}`);
-    lanIps.forEach(ip => {
-        console.log(`🌐 เปิดจากเครื่องอื่นในวง LAN: http://${ip}:${PORT}`);
-    });
+    console.log(`🚀 Keyence TR-W1000 Server (Single-Machine Locked)`);
+    console.log(`🔑 Machine ID ประจำเครื่องนี้:   ${lic.machineId}`);
+    console.log(`🛡️ สถานะ License:             ${lic.licensed ? 'ACTIVE (ลงทะเบียนแล้ว)' : 'LOCKED (ยังไม่ได้ Activate)'}`);
+    console.log(`💻 เปิดใช้งานเฉพาะเครื่องนี้:     http://localhost:${PORT}`);
     console.log(`📡 Target Recorder IP:        http://${cfg.targetIp}/side.asp`);
     console.log(`====================================================`);
 });
