@@ -1,0 +1,99 @@
+[
+  {
+    "id": "CMT-1791791237585",
+    "timestamp": "2026-10-12T07:47:17.585Z",
+    "sessionCode": "261012140324",
+    "deviceName": "TR (TR-series | MAC: 00-01-FC-80-13-DF)",
+    "targetIp": "192.168.100.145",
+    "isClear": false,
+    "rawMessage": "Stop Process",
+    "embeddedTime": "14:47:15",
+    "txtMsg": "Stop Process 14:47:15",
+    "UniComm": "83,116,111,112,32,80,114,111,99,101,115,115,32,49,52,58,52,55,58,49,53",
+    "retCode": "Ret:200"
+  },
+  {
+    "id": "CMT-1791784345946",
+    "timestamp": "2026-10-12T05:52:25.946Z",
+    "sessionCode": "261012125121",
+    "deviceName": "TR (TR-series | MAC: 00-01-FC-80-13-DF)",
+    "targetIp": "192.168.100.145",
+    "isClear": false,
+    "rawMessage": "Start Record",
+    "embeddedTime": "12:52",
+    "txtMsg": "Start Record 12:52",
+    "UniComm": "83,116,97,114,116,32,82,101,99,111,114,100,32,49,50,58,53,50",
+    "retCode": "Ret:200"
+  },
+  {
+    "id": "CMT-1791783933262",
+    "timestamp": "2026-10-12T05:45:33.262Z",
+    "sessionCode": "261012124458",
+    "deviceName": "TR (TR-series | MAC: 00-01-FC-80-13-DF)",
+    "targetIp": "192.168.100.145",
+    "isClear": false,
+    "rawMessage": "Start Record",
+    "embeddedTime": "12:45",
+    "txtMsg": "Start Record 12:45",
+    "UniComm": "83,116,97,114,116,32,82,101,99,111,114,100,32,49,50,58,52,53",
+    "retCode": "Ret:200"
+  },
+  {
+    "id": "CMT-1791779806786",
+    "timestamp": "2026-10-12T04:36:46.786Z",
+    "sessionCode": "261012113622",
+    "targetIp": "192.168.100.145",
+    "isClear": false,
+    "rawMessage": "Working",
+    "embeddedTime": "11:36",
+    "txtMsg": "Working 11:36",
+    "UniComm": "87,111,114,107,105,110,103,32,49,49,58,51,54",
+    "retCode": "Ret:200"
+  },
+  {
+    "id": "CMT-1791778419831",
+    "timestamp": "2026-10-12T04:13:39.831Z",
+    "sessionCode": "261012111316",
+    "targetIp": "192.168.100.145",
+    "isClear": false,
+    "rawMessage": "MC OFF",
+    "embeddedTime": "11:13:38",
+    "txtMsg": "MC OFF 11:13:38",
+    "UniComm": "77,67,32,79,70,70,32,49,49,58,49,51,58,51,56",
+    "retCode": "Ret:200"
+  },
+  {
+    "id": "CMT-1791777559982",
+    "timestamp": "2026-10-12T03:59:19.982Z",
+    "sessionCode": "261012125859",
+    "targetIp": "192.168.100.145",
+    "isClear": false,
+    "rawMessage": "Change Condition 450",
+    "embeddedTime": "10:59",
+    "txtMsg": "Change Condition 450 10:59",
+    "UniComm": "67,104,97,110,103,101,32,67,111,110,100,105,116,105,111,110,32,52,53,48,32,49,48,58,53,57",
+    "retCode": "Ret:200"
+  },
+  {
+    "id": "CMT-1791777527775",
+    "timestamp": "2026-10-12T03:58:47.775Z",
+    "sessionCode": "261012125828",
+    "targetIp": "192.168.100.145",
+    "isClear": false,
+    "rawMessage": "เปลี่ยนเงื่อนไข 100",
+    "embeddedTime": "10:58",
+    "txtMsg": "เปลี่ยนเงื่อนไข 100 10:58",
+    "UniComm": "3648,3611,3621,3637,3656,3618,3609,3648,3591,3639,3656,3629,3609,3652,3586,32,49,48,48,32,49,48,58,53,56",
+    "retCode": "Ret:206"
+  },
+  {
+    "id": "CMT-1791776694842",
+    "timestamp": "2026-10-12T03:44:54.842Z",
+    "sessionCode": "261012124434",
+    "targetIp": "192.168.100.145",
+    "isClear": true,
+    "txtMsg": "",
+    "UniComm": "",
+    "retCode": "Ret:200"
+  }
+]
