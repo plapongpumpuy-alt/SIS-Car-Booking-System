@@ -1,12 +1,29 @@
 # SIS Car Booking System
-**Version:** v.2026.09.21.1045
-**Last Updated:** 2026-09-21 10:45:00+07:00
+**Version:** v.2026.10.29.1500
+**Last Updated:** 2026-10-29 15:00:00+07:00
 **Live Website (GitHub Pages):** [https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/](https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/)
 
 ## Overview
 Welcome to the SIS Car Booking System. This document serves as the main user manual and work log.
 
 ## Work Log / Changelog
+- **2026-10-29 15:00**: Added Fuel Expense Tracking & Auto-Slip Integration (`เงินที่เติมน้ำมัน / ค่าน้ำมัน`):
+  - **Return Car Modal (`#modal-return-form`)**:
+    - Added dedicated input field for `เงินที่เติมน้ำมัน (บาท)` alongside odometer in/out and toll fee fields.
+    - Pre-loads previously saved fuel amount if the return modal is re-opened for adjustments.
+  - **Booking Form (`#booking-form`)**:
+    - Added optional `เงินที่เติมน้ำมัน (ถ้ามี)` field for trips where fuel is refueled in advance or recorded retroactively.
+    - Integrated with live preview panel (`#pv-fuel`) updating in real-time.
+  - **Vehicle Usage Slip & Accounting PDF (`#slip-modal`)**:
+    - Seamlessly pre-populates `slip-input-fuel` with recorded fuel money from booking/return records, eliminating manual re-typing.
+    - Auto-calculates total claim amount and updates the accounting email body (`openEmailModal`) automatically.
+  - **Dashboard & Daily Fleet Summary**:
+    - Displays fuel amount badges (`⛽ ค่าน้ำมัน: XXX บ.`) on Dashboard table rows for trips with recorded fuel.
+    - Aggregates daily fleet fuel expenses (`totalFuel`) in the Daily Summary Modal (`#daily-summary-modal`) with an extra KPI stat card.
+    - Includes fuel expense breakdown in both clipboard summary export and Telegram broadcast notifications.
+  - **Backend Google Apps Script (`Code.gs`)**:
+    - Added support for `payload.fuelFee` in both `action === "create"` and `action === "update"`.
+    - Automatically checks for column `ค่าน้ำมัน` / `เงินเติมน้ำมัน` / `เงินที่เติมน้ำมัน` and auto-provisions the column header in Google Sheets if not yet present.
 - **2026-09-21 10:45**: Added Daily Fleet Summary & Telegram Reporting Widget (`สรุปการใช้รถรายวัน`):
   - **Dashboard Summary Widget (`#view-dash`)**:
     - Embedded an interactive daily summary panel with quick date navigation (`< วันก่อนหน้า | วันที่ | วันถัดไป > | วันนี้`).

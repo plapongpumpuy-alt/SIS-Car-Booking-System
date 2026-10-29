@@ -541,6 +541,7 @@ window.appState = {
         const inUseList = [];
         const returnedList = [];
         let totalMileage = 0;
+        let totalFuel = 0;
 
         (this.bookings || []).forEach(b => {
             const statusRaw = (getVal(b, ['status', 'สถานะ']) || '').toString().toLowerCase();
@@ -561,6 +562,7 @@ window.appState = {
                 const mIn = parseFloat(getVal(b, ['mileagein', 'เลขไมล์เข้า', 'ไมล์เข้า'])) || 0;
                 const mOut = parseFloat(getVal(b, ['mileageout', 'เลขไมล์ออก', 'ไมล์ออก'])) || 0;
                 const mileageDiff = (mIn > mOut && mOut > 0) ? (mIn - mOut) : 0;
+                const fuelFee = parseFloat(getVal(b, ['fuel', 'ค่าน้ำมัน', 'เงินเติมน้ำมัน', 'เงินที่เติมน้ำมัน'])) || 0;
                 const isReturned = statusRaw.includes('complete') || statusRaw.includes('คืนรถ');
 
                 const carInfo = allCars.find(c => (c['ทะเบียนรถ'] || c['Plate'] || '').trim() === plate);
@@ -577,6 +579,7 @@ window.appState = {
                     mileageDiff,
                     mIn,
                     mOut,
+                    fuelFee,
                     rowIndex: b._rowIndex,
                     raw: b
                 };
@@ -586,6 +589,7 @@ window.appState = {
                 if (isReturned) {
                     returnedList.push(bookingItem);
                     totalMileage += mileageDiff;
+                    totalFuel += fuelFee;
                 } else {
                     inUseList.push(bookingItem);
                 }
@@ -604,7 +608,8 @@ window.appState = {
             inUseList,
             returnedList,
             availableCars,
-            totalMileage
+            totalMileage,
+            totalFuel
         };
     },
 
@@ -656,6 +661,7 @@ window.appState = {
             const toDate = getVal(record, ['todate', 'ถึงวันที่', 'วันสิ้นสุด']);
             const purpose = getVal(record, ['purpose', 'ไปทำอะไร', 'จุดประสงค์']);
             const dest = getVal(record, ['destination', 'ไปที่ไหน', 'สถานที่']);
+            const fuelFeeVal = parseFloat(getVal(record, ['fuel', 'ค่าน้ำมัน', 'เงินเติมน้ำมัน', 'เงินที่เติมน้ำมัน'])) || 0;
             let statusRaw = getVal(record, ['status', 'สถานะ']);
             const mileageIn = getVal(record, ['mileagein', 'ไมล์เข้า', 'เลขไมล์เข้า']);
             const mileageOut = getVal(record, ['mileageout', 'ไมล์ออก', 'เลขไมล์ออก']);
@@ -746,6 +752,7 @@ window.appState = {
                 <td class="p-4 text-gray-600 text-xs">
                     <p class="font-medium text-gray-800 mb-0.5">${purpose !== '-' ? purpose : ''}</p>
                     <p class="text-gray-500">${dest !== '-' ? dest : ''}</p>
+                    ${fuelFeeVal > 0 ? `<p class="mt-1"><span class="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200"><i class="fa-solid fa-gas-pump text-amber-500"></i> ค่าน้ำมัน: ${fuelFeeVal.toLocaleString()} บ.</span></p>` : ''}
                 </td>
                 <td class="p-4 text-gray-500 text-xs whitespace-nowrap">${dtRaw !== '-' ? formatDateShort(dtRaw) : '-'}</td>
                 <td class="p-4">${statusHtml}</td>
@@ -993,6 +1000,32 @@ window.openReturnModal = function(plate, mileageOutStr, rowIndex) {
     } else {
         mOutInput.value = '';
     }
+
+    let targetBooking = null;
+    if (rowIndex) {
+        targetBooking = appState.bookings.find(b => b._rowIndex === parseInt(rowIndex));
+    }
+    const fuelInput = document.getElementById('modal-fuel-fee');
+    const tollInput = document.getElementById('modal-toll-fee');
+    const tollBalInput = document.getElementById('modal-toll-balance');
+    const mInInput = document.getElementById('modal-mileage-in');
+    
+    if (targetBooking) {
+        const existingFuel = getVal(targetBooking, ['fuel', 'ค่าน้ำมัน', 'เงินเติมน้ำมัน', 'เงินที่เติมน้ำมัน']);
+        const existingToll = getVal(targetBooking, ['ค่าทางด่วน', 'tollfee', 'toll']);
+        const existingTollBal = getVal(targetBooking, ['บัตรทางด่วนคงเหลือ', 'ทางด่วนคงเหลือ', 'tollbalance']);
+        const existingMIn = getVal(targetBooking, ['เลขไมล์เข้า', 'ไมล์เข้า', 'mileagein']);
+        
+        if (fuelInput) fuelInput.value = (existingFuel && existingFuel !== '-' && !isNaN(parseFloat(existingFuel))) ? parseFloat(existingFuel) : '';
+        if (tollInput) tollInput.value = (existingToll && existingToll !== '-' && !isNaN(parseFloat(existingToll))) ? parseFloat(existingToll) : '';
+        if (tollBalInput) tollBalInput.value = (existingTollBal && existingTollBal !== '-' && !isNaN(parseFloat(existingTollBal))) ? parseFloat(existingTollBal) : '';
+        if (mInInput && existingMIn && existingMIn !== '-') mInInput.value = existingMIn;
+    } else {
+        if (fuelInput) fuelInput.value = '';
+        if (tollInput) tollInput.value = '';
+        if (tollBalInput) tollBalInput.value = '';
+        if (mInInput) mInInput.value = '';
+    }
     
     returnModal.classList.remove('hidden');
     setTimeout(() => returnModal.classList.add('show', 'opacity-100'), 10);
@@ -1019,6 +1052,7 @@ if (returnForm) {
                 rowIndex: rIndex || null, 
                 mileageOut: document.getElementById('modal-mileage-out').value,
                 mileageIn: document.getElementById('modal-mileage-in').value,
+                fuelFee: document.getElementById('modal-fuel-fee')?.value || "",
                 tollFee: document.getElementById('modal-toll-fee').value || "",
                 tollBalance: document.getElementById('modal-toll-balance').value || ""
             };
@@ -1043,9 +1077,11 @@ if (returnForm) {
                 const mailOutKey = keys.find(k => k.toLowerCase().includes('ไมล์ออก')) || 'เลขไมล์ออก';
                 const tollKey = keys.find(k => k.toLowerCase().includes('ค่าทางด่วน')) || 'ค่าทางด่วน';
                 const tollBalKey = keys.find(k => k.toLowerCase().includes('บัตรทางด่วนคงเหลือ')) || 'บัตรทางด่วนคงเหลือ';
+                const fuelKey = keys.find(k => k.toLowerCase().includes('น้ำมัน')) || 'ค่าน้ำมัน';
                 targetBooking[statusKey] = 'completed';
                 if (payload.mileageIn) targetBooking[mailInKey] = payload.mileageIn;
                 if (payload.mileageOut) targetBooking[mailOutKey] = payload.mileageOut;
+                if (payload.fuelFee !== undefined) targetBooking[fuelKey] = payload.fuelFee;
                 if (payload.tollFee) targetBooking[tollKey] = payload.tollFee;
                 if (payload.tollBalance) targetBooking[tollBalKey] = payload.tollBalance;
                 try { localStorage.setItem('sis_history', JSON.stringify(appState.bookings)); } catch(e){}
@@ -1210,9 +1246,12 @@ window.openSlipModal = function(rowIndex) {
         setTxt('slip-sign-approver', `( ${approverName} )`);
         setTxt('slip-sign-caretaker', `( ${displayCarManager !== '-' ? displayCarManager : '....................................................'} )`);
 
-        // Reset Quick inputs & recalculate
+        // Populate recorded fuel if available, or reset
+        const recordedFuel = getVal(booking, ['fuel', 'ค่าน้ำมัน', 'เงินเติมน้ำมัน', 'เงินที่เติมน้ำมัน']);
         const fuelIn = document.getElementById('slip-input-fuel');
-        if (fuelIn) fuelIn.value = '';
+        if (fuelIn) {
+            fuelIn.value = (recordedFuel && recordedFuel !== '-' && !isNaN(parseFloat(recordedFuel)) && parseFloat(recordedFuel) > 0) ? parseFloat(recordedFuel) : '';
+        }
         const fuelBillsIn = document.getElementById('slip-input-fuel-bills');
         if (fuelBillsIn) fuelBillsIn.value = '1';
         const otherIn = document.getElementById('slip-input-other');
@@ -1912,7 +1951,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     plate: vehPlateSelect.value,
                     purpose: document.getElementById('purpose').value,
                     destination: document.getElementById('dest').value,
-                    mileageOut: document.getElementById('mileage-out').value || ""
+                    mileageOut: document.getElementById('mileage-out').value || "",
+                    fuelFee: document.getElementById('booking-fuel-fee')?.value || ""
                 };
                 
                 document.getElementById('submit-modal').classList.remove('hidden');
@@ -1965,6 +2005,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         "ทะเบียนรถที่จอง": appState.currentPayload.plate,
                         "เลขไมล์ออก": appState.currentPayload.mileageOut || "",
                         "เลขไมล์เข้า": "",
+                        "ค่าน้ำมัน": appState.currentPayload.fuelFee || "",
                         "ค่าทางด่วน": "",
                         "บัตรทางด่วนคงเหลือ": "",
                         "สถานะ": "รออนุมัติ",
@@ -2018,7 +2059,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    ['purpose', 'dest'].forEach(id => document.getElementById(id)?.addEventListener('input', updatePreview));
+    ['purpose', 'dest', 'booking-fuel-fee'].forEach(id => document.getElementById(id)?.addEventListener('input', updatePreview));
 
     function updatePreview() {
         const uIdx = document.getElementById('req-user').value;
@@ -2035,6 +2076,19 @@ document.addEventListener('DOMContentLoaded', () => {
         
         document.getElementById('pv-purpose').textContent = document.getElementById('purpose').value || '-';
         document.getElementById('pv-dest').textContent = document.getElementById('dest').value || '-';
+        
+        const fuelVal = document.getElementById('booking-fuel-fee')?.value;
+        const pvFuel = document.getElementById('pv-fuel');
+        const pvFuelContainer = document.getElementById('pv-fuel-container');
+        if (pvFuel && pvFuelContainer) {
+            if (fuelVal && parseFloat(fuelVal) > 0) {
+                pvFuel.textContent = parseFloat(fuelVal).toLocaleString() + ' บาท';
+                pvFuelContainer.classList.remove('hidden');
+            } else {
+                pvFuel.textContent = '-';
+                pvFuelContainer.classList.add('hidden');
+            }
+        }
         
         const p = document.getElementById('veh-plate').value;
         if(p) {
@@ -2086,7 +2140,8 @@ window.generateDailySummaryText = function(isHtml) {
             ? data.returnedList.map(item => {
                 const u = item.user.includes('@') ? item.user.split('@')[0] : item.user;
                 const distText = item.mileageDiff > 0 ? ` (วิ่ง ${item.mileageDiff.toLocaleString()} กม.)` : '';
-                return `• <b>${item.plate}</b>: ${u}${distText}`;
+                const fuelText = item.fuelFee > 0 ? ` [เติมน้ำมัน ${item.fuelFee.toLocaleString()} บ.]` : '';
+                return `• <b>${item.plate}</b>: ${u}${distText}${fuelText}`;
               }).join('\n')
             : '• ยังไม่มีรถคืน';
 
@@ -2101,7 +2156,8 @@ window.generateDailySummaryText = function(isHtml) {
                `🅿️ <b>รถว่างพร้อมใช้งาน (${data.availableCars.length} คัน):</b>\n${availLines}\n\n` +
                `📈 <b>สรุปรวม:</b>\n` +
                `- คำขอใช้งานทั้งสิ้น: ${data.activeBookings.length} รายการ\n` +
-               `- ระยะทางที่วิ่งรวมวันนี้: ${data.totalMileage.toLocaleString()} กม.`;
+               `- ระยะทางที่วิ่งรวมวันนี้: ${data.totalMileage.toLocaleString()} กม.` +
+               (data.totalFuel > 0 ? `\n- ยอดเติมน้ำมันรวมวันนี้: ${data.totalFuel.toLocaleString()} บาท` : '');
     } else {
         const inUseLines = data.inUseList.length > 0 
             ? data.inUseList.map(item => {
@@ -2114,7 +2170,8 @@ window.generateDailySummaryText = function(isHtml) {
             ? data.returnedList.map(item => {
                 const u = item.user.includes('@') ? item.user.split('@')[0] : item.user;
                 const distText = item.mileageDiff > 0 ? ` (วิ่ง ${item.mileageDiff.toLocaleString()} กม.)` : '';
-                return `• ${item.plate}: ${u}${distText}`;
+                const fuelText = item.fuelFee > 0 ? ` [เติมน้ำมัน ${item.fuelFee.toLocaleString()} บ.]` : '';
+                return `• ${item.plate}: ${u}${distText}${fuelText}`;
               }).join('\n')
             : '• ยังไม่มีรถคืน';
 
@@ -2129,7 +2186,8 @@ window.generateDailySummaryText = function(isHtml) {
                `🅿️ รถว่างพร้อมใช้งาน (${data.availableCars.length} คัน):\n${availLines}\n\n` +
                `📈 สรุปรวม:\n` +
                `- คำขอใช้งานทั้งสิ้น: ${data.activeBookings.length} รายการ\n` +
-               `- ระยะทางที่วิ่งรวมวันนี้: ${data.totalMileage.toLocaleString()} กม.`;
+               `- ระยะทางที่วิ่งรวมวันนี้: ${data.totalMileage.toLocaleString()} กม.` +
+               (data.totalFuel > 0 ? `\n- ยอดเติมน้ำมันรวมวันนี้: ${data.totalFuel.toLocaleString()} บาท` : '');
     }
 };
 
@@ -2154,7 +2212,7 @@ window.openDailySummaryModal = function() {
 
     // Summary Quick Stat Row
     html += `
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+        <div class="grid grid-cols-2 ${data.totalFuel > 0 ? 'sm:grid-cols-5' : 'sm:grid-cols-4'} gap-2.5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
             <div class="text-center">
                 <span class="text-[11px] text-gray-500 block">ออกปฏิบัติงาน</span>
                 <span class="text-base font-bold text-amber-700 font-mono">${data.inUseList.length} คัน</span>
@@ -2171,6 +2229,11 @@ window.openDailySummaryModal = function() {
                 <span class="text-[11px] text-gray-500 block">ระยะทางรวม</span>
                 <span class="text-base font-bold text-slate-800 font-mono">${data.totalMileage.toLocaleString()} กม.</span>
             </div>
+            ${data.totalFuel > 0 ? `
+            <div class="text-center border-l border-slate-200 col-span-2 sm:col-span-1">
+                <span class="text-[11px] text-amber-600 block">ยอดเติมน้ำมัน</span>
+                <span class="text-base font-bold text-amber-700 font-mono">${data.totalFuel.toLocaleString()} ฿</span>
+            </div>` : ''}
         </div>
     `;
 
@@ -2245,6 +2308,7 @@ window.openDailySummaryModal = function() {
                     </div>
                     <div class="text-right self-end sm:self-center">
                         <span class="text-xs font-bold text-emerald-800 font-mono block">${item.mileageDiff > 0 ? `+${item.mileageDiff.toLocaleString()} กม.` : 'ไมล์ปกติ'}</span>
+                        ${item.fuelFee > 0 ? `<span class="text-[11px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 block mt-0.5 whitespace-nowrap"><i class="fa-solid fa-gas-pump text-amber-500 mr-0.5"></i>${item.fuelFee.toLocaleString()} บ.</span>` : ''}
                         ${item.rowIndex ? `<button type="button" onclick="closeDailySummaryModal(); openSlipModal(${item.rowIndex})" class="text-[11px] text-sky-700 hover:underline mt-0.5 inline-block"><i class="fa-solid fa-file-invoice-dollar mr-0.5"></i>ดูใบรายงาน</button>` : ''}
                     </div>
                 </div>

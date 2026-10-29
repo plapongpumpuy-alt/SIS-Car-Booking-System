@@ -407,6 +407,7 @@ function doPost(e) {
       else if (header === "ทะเบียนรถที่จอง") newRow.push(payload.plate || "");
       else if (header === "เลขไมล์ออก") newRow.push(payload.mileageOut || "");
       else if (header === "เลขไมล์เข้า") newRow.push("");
+      else if (header === "ค่าน้ำมัน" || header === "เงินเติมน้ำมัน" || header === "เงินที่เติมน้ำมัน") newRow.push(payload.fuelFee || "");
       else if (header === "ค่าทางด่วน") newRow.push("");
       else if (header === "บัตรทางด่วนคงเหลือ") newRow.push("");
       else if (header === "สถานะ") newRow.push("รออนุมัติ");
@@ -418,12 +419,13 @@ function doPost(e) {
     var newRowIndex = sheet.getLastRow();
 
     // ส่งแจ้งเตือนเข้า Telegram พร้อมปุ่ม อนุมัติ / ปฏิเสธ
+    var fuelLine = (payload.fuelFee && payload.fuelFee !== "") ? ("\n⛽ <b>เงินที่เติมน้ำมัน:</b> " + Number(payload.fuelFee).toLocaleString() + " บาท") : "";
     var messageText = "🚗 <b>มีคำขอจองรถใหม่ (คิวที่ " + newRowIndex + ")</b>\n\n" +
                       "👤 <b>ผู้จอง:</b> " + payload.email + "\n" +
                       "🚙 <b>ทะเบียนรถ:</b> " + payload.plate + "\n" +
                       "📅 <b>เดินทาง:</b> " + payload.fromDate + " ถึง " + payload.toDate + " (" + payload.days + ")\n" +
                       "🎯 <b>จุดประสงค์:</b> " + payload.purpose + "\n" +
-                      "📍 <b>สถานที่:</b> " + payload.destination + "\n" +
+                      "📍 <b>สถานที่:</b> " + payload.destination + fuelLine + "\n" +
                       "⏱ <b>เวลาทำรายการ:</b> " + Utilities.formatDate(new Date(), "Asia/Bangkok", "dd/MM/yyyy HH:mm:ss") + "\n\n" +
                       "<i>กรุณาพิจารณาอนุมัติหรือปฏิเสธคำขอด้านล่างนี้:</i>";
 
@@ -447,6 +449,9 @@ function doPost(e) {
     var mailOutIndex = headers.indexOf("เลขไมล์ออก");
     var tollIndex = headers.indexOf("ค่าทางด่วน");
     var tollBalIndex = headers.indexOf("บัตรทางด่วนคงเหลือ");
+    var fuelIndex = headers.indexOf("ค่าน้ำมัน");
+    if (fuelIndex === -1) fuelIndex = headers.indexOf("เงินเติมน้ำมัน");
+    if (fuelIndex === -1) fuelIndex = headers.indexOf("เงินที่เติมน้ำมัน");
     var statusIndex = headers.indexOf("สถานะ");
     var targetRowIndex = payload.rowIndex; 
 
@@ -460,10 +465,18 @@ function doPost(e) {
       }
     }
     if (targetRowIndex) {
+      // สร้างคอลัมน์ค่าน้ำมันอัตโนมัติหากยังไม่มีใน Sheet
+      if (fuelIndex === -1 && payload.fuelFee !== undefined && payload.fuelFee !== "") {
+        fuelIndex = headers.length;
+        sheet.getRange(1, fuelIndex + 1).setValue("ค่าน้ำมัน");
+        headers.push("ค่าน้ำมัน");
+      }
+
       if(mailOutIndex !== -1 && payload.mileageOut) sheet.getRange(targetRowIndex, mailOutIndex + 1).setValue(payload.mileageOut);
       if(mailInIndex !== -1 && payload.mileageIn) sheet.getRange(targetRowIndex, mailInIndex + 1).setValue(payload.mileageIn);
-      if(tollIndex !== -1 && payload.tollFee) sheet.getRange(targetRowIndex, tollIndex + 1).setValue(payload.tollFee);
-      if(tollBalIndex !== -1 && payload.tollBalance) sheet.getRange(targetRowIndex, tollBalIndex + 1).setValue(payload.tollBalance);
+      if(fuelIndex !== -1 && payload.fuelFee !== undefined && payload.fuelFee !== "") sheet.getRange(targetRowIndex, fuelIndex + 1).setValue(payload.fuelFee);
+      if(tollIndex !== -1 && payload.tollFee !== undefined && payload.tollFee !== "") sheet.getRange(targetRowIndex, tollIndex + 1).setValue(payload.tollFee);
+      if(tollBalIndex !== -1 && payload.tollBalance !== undefined && payload.tollBalance !== "") sheet.getRange(targetRowIndex, tollBalIndex + 1).setValue(payload.tollBalance);
       if(statusIndex !== -1) sheet.getRange(targetRowIndex, statusIndex + 1).setValue("completed");
       return ContentService.createTextOutput(JSON.stringify({status: "success"})).setMimeType(ContentService.MimeType.JSON);
     } else {
