@@ -1,12 +1,20 @@
 # SIS Car Booking System
-**Version:** v.2026.10.29.1500
-**Last Updated:** 2026-10-29 15:00:00+07:00
+**Version:** v.2026.10.29.1615
+**Last Updated:** 2026-10-29 16:15:00+07:00
 **Live Website (GitHub Pages):** [https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/](https://plapongpumpuy-alt.github.io/SIS-Car-Booking-System/)
 
 ## Overview
 Welcome to the SIS Car Booking System. This document serves as the main user manual and work log.
 
 ## Work Log / Changelog
+- **2026-10-29 16:15**: Added Dedicated Fuel Column (`ค่าน้ำมัน`) to Dashboard Table & Auto-Creation in Google Sheets:
+  - **Web Dashboard Table (`#dash-tbody`)**:
+    - Added dedicated table column header `⛽ ค่าน้ำมัน` in the main requests table.
+    - Added styled badge cell displaying fuel amounts (e.g. `1,200 ฿`) or `-` for non-refueled trips.
+    - Updated empty state to `colspan="8"` to fit the new column layout cleanly.
+  - **Google Apps Script & Google Sheets (`Code.gs`)**:
+    - Added `ensureFuelColumn(ss)` and `createFuelColumn()` to automatically check and provision the `ค่าน้ำมัน` column header in `ตารางบันทึกการใช้รถ`.
+    - Executed automatically on every `doGet` and `doPost` to ensure seamless zero-maintenance database migration.
 - **2026-10-29 15:00**: Added Fuel Expense Tracking & Auto-Slip Integration (`เงินที่เติมน้ำมัน / ค่าน้ำมัน`):
   - **Return Car Modal (`#modal-return-form`)**:
     - Added dedicated input field for `เงินที่เติมน้ำมัน (บาท)` alongside odometer in/out and toll fee fields.

@@ -51,8 +51,9 @@
   - Implemented Hardware Machine License Lock (`MachineGuid` -> `KTRW-XXXX-XXXX-XXXX` + SHA-256 `ACTV-XXXX-XXXX-XXXX-XXXX` stored in `license.json`) and separate Admin Activation Key Generator App in `keyence-license-generator/` (`index.html`, `open-keygen.bat`, `generate-key.js`).
   - Relocated both `keyence-tr-w1000/` and `keyence-license-generator/` along with dedicated `.agents/AGENTS.md` context into standalone workspace `E:\Project\Aoyama Thai\Keyence TR-W10000` (2026-10-12 15:33).
   - **IMPORTANT WORKSPACE RULE**: Any future edits, feature additions, or documentation updates for the Keyence TR-W1000 project MUST be made directly inside `E:\Project\Aoyama Thai\Keyence TR-W10000` (`E:\Project\Aoyama Thai\Keyence TR-W10000\keyence-tr-w1000` and `E:\Project\Aoyama Thai\Keyence TR-W10000\keyence-license-generator`).
-- Implemented Fuel Expense Tracking & Auto-Slip Integration (2026-10-29 15:00):
+- Implemented Fuel Expense Tracking & Auto-Slip Integration (2026-10-29 15:00 / 16:15):
+  - Added dedicated "ค่าน้ำมัน" column in Dashboard table (`#dash-tbody`) with badge styling.
   - Added "เงินที่เติมน้ำมัน" (บาท) field in Return Car modal (`#modal-return-form`) and Booking form (`#booking-form`).
   - Integrated auto-population in Vehicle Usage Slip (`#slip-modal`) and accounting email draft.
   - Added fuel expense display badges on Dashboard table and daily fuel total calculation in Daily Fleet Summary widget / Telegram report.
-  - Enhanced Google Apps Script (`Code.gs`) with automatic sheet column creation and synchronization for `ค่าน้ำมัน`.
+  - Enhanced Google Apps Script (`Code.gs`) with `ensureFuelColumn(ss)` and `createFuelColumn()` for automatic column creation and synchronization for `ค่าน้ำมัน` in `ตารางบันทึกการใช้รถ`.

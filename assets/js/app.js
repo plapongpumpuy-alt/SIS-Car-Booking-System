@@ -752,9 +752,11 @@ window.appState = {
                 <td class="p-4 text-gray-600 text-xs">
                     <p class="font-medium text-gray-800 mb-0.5">${purpose !== '-' ? purpose : ''}</p>
                     <p class="text-gray-500">${dest !== '-' ? dest : ''}</p>
-                    ${fuelFeeVal > 0 ? `<p class="mt-1"><span class="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200"><i class="fa-solid fa-gas-pump text-amber-500"></i> ค่าน้ำมัน: ${fuelFeeVal.toLocaleString()} บ.</span></p>` : ''}
                 </td>
                 <td class="p-4 text-gray-500 text-xs whitespace-nowrap">${dtRaw !== '-' ? formatDateShort(dtRaw) : '-'}</td>
+                <td class="p-4 whitespace-nowrap">
+                    ${fuelFeeVal > 0 ? `<span class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 font-mono"><i class="fa-solid fa-gas-pump text-amber-500"></i> ${fuelFeeVal.toLocaleString()} ฿</span>` : `<span class="text-gray-400 text-xs font-mono">-</span>`}
+                </td>
                 <td class="p-4">${statusHtml}</td>
                 <td class="p-4 text-center">${actionHtml}</td>
             `;
@@ -762,7 +764,7 @@ window.appState = {
         });
 
         if (visibleCount === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-gray-500">ไม่พบรายการที่ตรงกับเงื่อนไข</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-gray-500">ไม่พบรายการที่ตรงกับเงื่อนไข</td></tr>`;
         }
         this.renderDailySummary();
     },

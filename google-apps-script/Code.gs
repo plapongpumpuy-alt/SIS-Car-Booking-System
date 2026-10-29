@@ -31,6 +31,7 @@ var DEFAULT_MAINT_ROWS = [
 // =================================================================
 function doGet(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  ensureFuelColumn(ss);
   
   if (e.parameter && e.parameter.action === 'get_all') {
     var historyData = getSheetData(ss, "ตารางบันทึกการใช้รถ", true);
@@ -123,6 +124,33 @@ function getOrCreateSheet(ss, sheetName, defaultHeaders, defaultRows) {
     }
   }
   return getSheetData(ss, sheetName, true);
+}
+
+// ตรวจสอบและสร้างคอลัมน์ "ค่าน้ำมัน" ในชีต "ตารางบันทึกการใช้รถ" อัตโนมัติหากยังไม่มี
+function ensureFuelColumn(ss) {
+  try {
+    if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("ตารางบันทึกการใช้รถ");
+    if (!sheet) return;
+    var lastCol = sheet.getLastColumn();
+    if (lastCol < 1) return;
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    var fuelIndex = headers.indexOf("ค่าน้ำมัน");
+    if (fuelIndex === -1) fuelIndex = headers.indexOf("เงินเติมน้ำมัน");
+    if (fuelIndex === -1) fuelIndex = headers.indexOf("เงินที่เติมน้ำมัน");
+
+    if (fuelIndex === -1) {
+      sheet.getRange(1, lastCol + 1).setValue("ค่าน้ำมัน").setFontWeight("bold").setBackground("#f1f5f9");
+    }
+  } catch(e) {
+    console.warn("ensureFuelColumn error:", e);
+  }
+}
+
+// ฟังก์ชันสำหรับกดรันสร้างคอลัมน์ "ค่าน้ำมัน" จาก Apps Script Editor ได้โดยตรง
+function createFuelColumn() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  ensureFuelColumn(ss);
 }
 
 // Helper แปลงวันที่ให้อยู่ในฟอร์แมต YYYY-MM-DD ตามเขตเวลาประเทศไทย
@@ -341,6 +369,7 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  ensureFuelColumn(ss);
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
 
   // ----------------------------------------------------
